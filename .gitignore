@@ -21,6 +21,7 @@ pnpm-debug.log*
 # Runtime
 *.pid
 *.seed
+.mongo-data/
 
 # OS / editor
 .DS_Store
@@ -34,4 +35,3 @@ sprint.md
 
 document.md/
 sprint.md/
-

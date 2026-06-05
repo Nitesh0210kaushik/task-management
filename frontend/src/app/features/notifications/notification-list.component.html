@@ -1,0 +1,14 @@
+<section class="notification-list" [class.compact]="variant === 'compact'" [class.grid]="variant === 'grid'" *ngIf="notifications.length; else emptyState">
+  <article class="notification-item" *ngFor="let notification of notifications" [class.unread]="!notification.read">
+    <span class="notification-dot" [class.active]="notification.status === 'inProgress'" [class.done]="notification.status === 'completed'"></span>
+    <div>
+      <strong>{{ notification.title }}</strong>
+      <p>{{ notification.message }}</p>
+      <small>{{ formatNotificationTime(notification.createdAt) }}</small>
+    </div>
+  </article>
+</section>
+
+<ng-template #emptyState>
+  <p class="empty-copy">{{ emptyText }}</p>
+</ng-template>

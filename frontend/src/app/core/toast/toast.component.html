@@ -1,0 +1,18 @@
+<section class="toast-region" aria-live="polite" aria-label="Notifications">
+  <article class="toast" *ngFor="let toast of toastService.toasts(); trackBy: trackToast" [ngClass]="toast.type">
+    <span class="toast-icon">
+      <svg *ngIf="toast.type === 'success'" lucideCircleCheck aria-hidden="true"></svg>
+      <svg *ngIf="toast.type === 'error'" lucideCircleAlert aria-hidden="true"></svg>
+      <svg *ngIf="toast.type === 'info'" lucideInfo aria-hidden="true"></svg>
+    </span>
+
+    <div class="toast-copy">
+      <strong>{{ toast.title }}</strong>
+      <p>{{ toast.message }}</p>
+    </div>
+
+    <button type="button" (click)="toastService.dismiss(toast.id)" aria-label="Dismiss notification" title="Dismiss notification">
+      <svg lucideX aria-hidden="true"></svg>
+    </button>
+  </article>
+</section>

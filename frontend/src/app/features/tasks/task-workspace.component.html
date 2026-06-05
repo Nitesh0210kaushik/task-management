@@ -1,0 +1,242 @@
+<section class="task-workspace">
+  <div class="toolbar">
+    <label class="search-box">
+      <svg lucideSearch aria-hidden="true"></svg>
+      <input type="search" [(ngModel)]="searchTerm" [ngModelOptions]="{ standalone: true }" placeholder="Search tasks..." />
+    </label>
+
+    <label class="filter-control">
+      <svg lucideListFilter aria-hidden="true"></svg>
+      <select [(ngModel)]="filter">
+        <option value="all">All tasks</option>
+        <option value="backlog">Backlog only</option>
+        <option value="inProgress">In Progress only</option>
+        <option value="completed">Done only</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="view-switcher" aria-label="Task view">
+    <button type="button" [class.active]="taskView === 'kanban'" (click)="setTaskView('kanban')">
+      <svg lucideLayoutDashboard aria-hidden="true"></svg>
+      <span>Kanban View</span>
+    </button>
+    <button type="button" [class.active]="taskView === 'list'" (click)="setTaskView('list')">
+      <svg lucideListTodo aria-hidden="true"></svg>
+      <span>List View</span>
+    </button>
+  </div>
+
+  <div class="loading-strip" *ngIf="isLoading">Loading tasks...</div>
+
+  <section class="kanban-board" *ngIf="taskView === 'kanban'; else listView">
+    <article
+      class="kanban-column backlog"
+      [class.drop-target]="dragTargetStatus === 'backlog'"
+      (dragover)="allowTaskDrop($event, 'backlog')"
+      (drop)="dropTaskOnStatus($event, 'backlog')"
+    >
+      <header>
+        <div>
+          <span>Stage</span>
+          <h2>Backlog</h2>
+        </div>
+        <strong>{{ displayedBacklogTasks.length }}</strong>
+      </header>
+
+      <div class="kanban-list">
+        <article
+          class="kanban-card"
+          *ngFor="let task of displayedBacklogTasks"
+          draggable="true"
+          [class.is-dragging]="isTaskDragging(task)"
+          (dragstart)="startTaskDrag($event, task)"
+          (dragend)="endTaskDrag()"
+        >
+          <div class="kanban-card-top">
+            <strong>{{ task.title }}</strong>
+            <span class="kanban-card-status">
+              <svg lucideGripVertical class="drag-handle" aria-hidden="true"></svg>
+              <span class="row-dot"></span>
+            </span>
+          </div>
+          <p>{{ task.description }}</p>
+
+          <div class="kanban-meta">
+            <span>{{ task.assignedTo.username }}</span>
+            <span>{{ formatShortDate(task.updatedAt) }}</span>
+          </div>
+
+          <div class="kanban-footer">
+            <span class="status-badge">{{ statusLabel(task.status) }}</span>
+            <div class="task-actions">
+              <button type="button" (click)="requestEdit(task)" title="Edit task" aria-label="Edit task">
+                <svg lucidePencil aria-hidden="true"></svg>
+              </button>
+              <button class="danger" type="button" (click)="deleteTask(task)" title="Delete task" aria-label="Delete task">
+                <svg lucideTrash2 aria-hidden="true"></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <div class="kanban-empty" *ngIf="!displayedBacklogTasks.length && !isLoading">No backlog tasks</div>
+      </div>
+    </article>
+
+    <article
+      class="kanban-column active"
+      [class.drop-target]="dragTargetStatus === 'inProgress'"
+      (dragover)="allowTaskDrop($event, 'inProgress')"
+      (drop)="dropTaskOnStatus($event, 'inProgress')"
+    >
+      <header>
+        <div>
+          <span>Stage</span>
+          <h2>In Progress</h2>
+        </div>
+        <strong>{{ displayedInProgressTasks.length }}</strong>
+      </header>
+
+      <div class="kanban-list">
+        <article
+          class="kanban-card is-active"
+          *ngFor="let task of displayedInProgressTasks"
+          draggable="true"
+          [class.is-dragging]="isTaskDragging(task)"
+          (dragstart)="startTaskDrag($event, task)"
+          (dragend)="endTaskDrag()"
+        >
+          <div class="kanban-card-top">
+            <strong>{{ task.title }}</strong>
+            <span class="kanban-card-status">
+              <svg lucideGripVertical class="drag-handle" aria-hidden="true"></svg>
+              <span class="row-dot active"></span>
+            </span>
+          </div>
+          <p>{{ task.description }}</p>
+
+          <div class="kanban-meta">
+            <span>{{ task.assignedTo.username }}</span>
+            <span>{{ formatShortDate(task.updatedAt) }}</span>
+          </div>
+
+          <div class="kanban-footer">
+            <span class="status-badge active">{{ statusLabel(task.status) }}</span>
+            <div class="task-actions">
+              <button type="button" (click)="requestEdit(task)" title="Edit task" aria-label="Edit task">
+                <svg lucidePencil aria-hidden="true"></svg>
+              </button>
+              <button class="danger" type="button" (click)="deleteTask(task)" title="Delete task" aria-label="Delete task">
+                <svg lucideTrash2 aria-hidden="true"></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <div class="kanban-empty" *ngIf="!displayedInProgressTasks.length && !isLoading">No active tasks</div>
+      </div>
+    </article>
+
+    <article
+      class="kanban-column done"
+      [class.drop-target]="dragTargetStatus === 'completed'"
+      (dragover)="allowTaskDrop($event, 'completed')"
+      (drop)="dropTaskOnStatus($event, 'completed')"
+    >
+      <header>
+        <div>
+          <span>Stage</span>
+          <h2>Done</h2>
+        </div>
+        <strong>{{ displayedCompletedTasks.length }}</strong>
+      </header>
+
+      <div class="kanban-list">
+        <article
+          class="kanban-card is-complete"
+          *ngFor="let task of displayedCompletedTasks"
+          draggable="true"
+          [class.is-dragging]="isTaskDragging(task)"
+          (dragstart)="startTaskDrag($event, task)"
+          (dragend)="endTaskDrag()"
+        >
+          <div class="kanban-card-top">
+            <strong>{{ task.title }}</strong>
+            <span class="kanban-card-status">
+              <svg lucideGripVertical class="drag-handle" aria-hidden="true"></svg>
+              <span class="row-dot done"></span>
+            </span>
+          </div>
+          <p>{{ task.description }}</p>
+
+          <div class="kanban-meta">
+            <span>{{ task.assignedTo.username }}</span>
+            <span>{{ formatShortDate(task.updatedAt) }}</span>
+          </div>
+
+          <div class="kanban-footer">
+            <span class="status-badge complete">{{ statusLabel(task.status) }}</span>
+            <div class="task-actions">
+              <button type="button" (click)="requestEdit(task)" title="Edit task" aria-label="Edit task">
+                <svg lucidePencil aria-hidden="true"></svg>
+              </button>
+              <button class="danger" type="button" (click)="deleteTask(task)" title="Delete task" aria-label="Delete task">
+                <svg lucideTrash2 aria-hidden="true"></svg>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <div class="kanban-empty" *ngIf="!displayedCompletedTasks.length && !isLoading">No done tasks</div>
+      </div>
+    </article>
+  </section>
+
+  <ng-template #listView>
+    <section class="task-table">
+      <div class="table-row table-head">
+        <span>Task</span>
+        <span>Status</span>
+        <span>Owner</span>
+        <span>Created by</span>
+        <span>Updated</span>
+        <span>Actions</span>
+      </div>
+
+      <div class="empty-table" *ngIf="!displayedTasks.length && !isLoading">
+        <strong>No tasks found</strong>
+        <span>Try a different filter or create a new task.</span>
+      </div>
+
+      <article class="table-row task-row" *ngFor="let task of displayedTasks">
+        <div class="task-title-cell">
+          <span class="row-dot" [class.active]="normalizedStatus(task) === 'inProgress'" [class.done]="normalizedStatus(task) === 'completed'"></span>
+          <div>
+            <strong>{{ task.title }}</strong>
+            <small>{{ task.description }}</small>
+          </div>
+        </div>
+
+        <span class="status-badge" [class.active]="normalizedStatus(task) === 'inProgress'" [class.complete]="normalizedStatus(task) === 'completed'">
+          {{ statusLabel(task.status) }}
+        </span>
+        <span>{{ task.assignedTo.username }}</span>
+        <span>{{ task.createdBy.username }}</span>
+        <span>{{ formatDate(task.updatedAt) }}</span>
+
+        <div class="task-actions">
+          <button type="button" (click)="markComplete(task)" [disabled]="normalizedStatus(task) === 'completed'" title="Mark done" aria-label="Mark done">
+            <svg lucideCheckCircle2 aria-hidden="true"></svg>
+          </button>
+          <button type="button" (click)="requestEdit(task)" title="Edit task" aria-label="Edit task">
+            <svg lucidePencil aria-hidden="true"></svg>
+          </button>
+          <button class="danger" type="button" (click)="deleteTask(task)" title="Delete task" aria-label="Delete task">
+            <svg lucideTrash2 aria-hidden="true"></svg>
+          </button>
+        </div>
+      </article>
+    </section>
+  </ng-template>
+</section>

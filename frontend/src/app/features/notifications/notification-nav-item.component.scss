@@ -1,0 +1,50 @@
+:host {
+  display: block;
+}
+
+button {
+  width: 100%;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 14px;
+  background: transparent;
+  color: #172033;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+button.active,
+button:hover {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+em {
+  min-width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  margin-left: auto;
+  border-radius: 999px;
+  background: rgba(180, 83, 9, 0.12);
+  color: #b45309;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+button.active em,
+button:hover em {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+svg {
+  width: 18px;
+  height: 18px;
+}

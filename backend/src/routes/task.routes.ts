@@ -1,12 +1,7 @@
-import { Router } from 'express';
-import { createTask, deleteTask, listTasks, updateTask } from '../controllers/task.controller';
-import { authenticate } from '../middleware/auth';
+import type { Express } from 'express';
+import { taskRouter } from '../modules/tasks/routes/task.routes';
 
-export const taskRouter = Router();
-
-taskRouter.use(authenticate);
-taskRouter.get('/', listTasks);
-taskRouter.post('/', createTask);
-taskRouter.patch('/:id', updateTask);
-taskRouter.delete('/:id', deleteTask);
+export const registerTaskRoutes = (app: Express): void => {
+  app.use('/api/tasks', taskRouter);
+};
 

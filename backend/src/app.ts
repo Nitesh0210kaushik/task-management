@@ -1,16 +1,18 @@
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from './config/env';
-import { authRouter } from './routes/auth.routes';
-import { taskRouter } from './routes/task.routes';
-import { userRouter } from './routes/user.routes';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { loggerStream } from './config/logger';
+import { errorHandler, notFoundHandler } from './middlewares/error-handler.middleware';
+import { registerApiRoutes } from './routes';
 
 export const createApp = () => {
   const app = express();
+
+  app.disable('etag');
 
   app.use(
     helmet({
@@ -24,7 +26,8 @@ export const createApp = () => {
     })
   );
   app.use(express.json({ limit: '1mb' }));
-  app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
+  app.use(cookieParser());
+  app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev', { stream: loggerStream }));
 
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -37,13 +40,17 @@ export const createApp = () => {
     res.json({ status: 'ok' });
   });
 
-  app.use('/api/auth', authLimiter, authRouter);
-  app.use('/api/users', userRouter);
-  app.use('/api/tasks', taskRouter);
+  app.use('/api', (_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+
+  registerApiRoutes(app, authLimiter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
 
   return app;
 };
-

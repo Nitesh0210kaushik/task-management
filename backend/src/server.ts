@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import { createApp } from './app';
 import { connectDatabase } from './config/database';
 import { env } from './config/env';
+import { logger } from './config/logger';
 import { configureSocket } from './realtime/socket';
 
 const startServer = async (): Promise<void> => {
@@ -21,12 +22,11 @@ const startServer = async (): Promise<void> => {
   app.set('io', io);
 
   server.listen(env.port, () => {
-    console.log(`API running on http://localhost:${env.port}`);
+    logger.info(`API running on http://localhost:${env.port}`);
   });
 };
 
 startServer().catch((error) => {
-  console.error('Failed to start server:', error);
+  logger.error('Failed to start server:', error);
   process.exit(1);
 });
-

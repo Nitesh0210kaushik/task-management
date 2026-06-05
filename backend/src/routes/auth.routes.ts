@@ -1,10 +1,6 @@
-import { Router } from 'express';
-import { getMe, login, register } from '../controllers/auth.controller';
-import { authenticate } from '../middleware/auth';
+import type { Express, RequestHandler } from 'express';
+import { createAuthRouter } from '../modules/auth/routes/auth.routes';
 
-export const authRouter = Router();
-
-authRouter.post('/register', register);
-authRouter.post('/login', login);
-authRouter.get('/me', authenticate, getMe);
-
+export const registerAuthRoutes = (app: Express, authLimiter: RequestHandler): void => {
+  app.use('/api/auth', createAuthRouter(authLimiter));
+};

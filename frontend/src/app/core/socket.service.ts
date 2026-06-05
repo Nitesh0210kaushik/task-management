@@ -8,13 +8,13 @@ import { TaskRealtimePayload } from './models';
 export class SocketService {
   private socket: Socket | null = null;
 
-  connect(token: string): void {
+  connect(): void {
     if (this.socket?.connected) {
       return;
     }
 
     this.socket = io(environment.socketUrl, {
-      auth: { token },
+      withCredentials: true,
       transports: ['websocket']
     });
   }
@@ -45,4 +45,3 @@ export class SocketService {
     this.socket = null;
   }
 }
-

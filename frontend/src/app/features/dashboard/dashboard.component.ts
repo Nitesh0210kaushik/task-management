@@ -1,25 +1,51 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import {
+  LucideArrowRight,
   LucideCheckCircle2,
+  LucideLayoutDashboard,
   LucideListFilter,
+  LucideListTodo,
   LucideLogOut,
-  LucidePencil,
   LucidePlus,
   LucideRefreshCw,
-  LucideShieldCheck,
-  LucideTrash2
+  LucideUsers,
+  LucideX
 } from '@lucide/angular';
-import { Subscription } from 'rxjs';
+import { Subscription, filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
+import { DashboardService } from '../../core/dashboard.service';
+import { NotificationService } from '../../core/notification.service';
 import { SocketService } from '../../core/socket.service';
-import { TaskFormPayload, TaskService } from '../../core/task.service';
-import { UserService } from '../../core/user.service';
-import { Task, TaskStatus, User } from '../../core/models';
+import { TaskService } from '../../core/task.service';
+import { ToastService } from '../../core/toast.service';
+import { CreateUserPayload, UserService } from '../../core/user.service';
+import { NotificationBellComponent } from '../notifications/notification-bell.component';
+import { NotificationNavItemComponent } from '../notifications/notification-nav-item.component';
+import { NotificationPageComponent } from '../notifications/notification-page.component';
+import { TaskFormModalComponent } from '../tasks/task-form-modal.component';
+import { TaskWorkspaceComponent } from '../tasks/task-workspace.component';
+import {
+  DashboardOverview,
+  DashboardStageMetric,
+  DashboardStats,
+  DashboardWorkload,
+  Task,
+  TaskStatus,
+  User
+} from '../../core/models';
 
-type TaskFilter = TaskStatus | 'all';
+type WorkspaceSection = 'dashboard' | 'tasks' | 'team' | 'notifications';
+
+const EMPTY_DASHBOARD_STATS: DashboardStats = {
+  total: 0,
+  backlog: 0,
+  inProgress: 0,
+  completed: 0,
+  completionRate: 0
+};
 
 @Component({
   selector: 'app-dashboard',
@@ -28,210 +54,65 @@ type TaskFilter = TaskStatus | 'all';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    RouterLink,
+    RouterLinkActive,
+    NotificationBellComponent,
+    NotificationNavItemComponent,
+    NotificationPageComponent,
+    TaskFormModalComponent,
+    TaskWorkspaceComponent,
+    LucideArrowRight,
     LucideCheckCircle2,
+    LucideLayoutDashboard,
     LucideListFilter,
+    LucideListTodo,
     LucideLogOut,
-    LucidePencil,
     LucidePlus,
     LucideRefreshCw,
-    LucideShieldCheck,
-    LucideTrash2
+    LucideUsers,
+    LucideX
   ],
-  template: `
-    <main class="app-shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">Task Management</p>
-          <h1>Workspace Dashboard</h1>
-        </div>
-
-        <div class="user-pill" *ngIf="currentUser">
-          <svg lucideShieldCheck aria-hidden="true"></svg>
-          <span>{{ currentUser.username }}</span>
-          <strong>{{ roleLabel(currentUser.role) }}</strong>
-          <button class="icon-button" type="button" (click)="logout()" title="Logout" aria-label="Logout">
-            <svg lucideLogOut aria-hidden="true"></svg>
-          </button>
-        </div>
-      </header>
-
-      <section class="stats-grid">
-        <article>
-          <span>Total</span>
-          <strong>{{ tasks.length }}</strong>
-        </article>
-        <article>
-          <span>Pending</span>
-          <strong>{{ pendingCount }}</strong>
-        </article>
-        <article>
-          <span>Completed</span>
-          <strong>{{ completedCount }}</strong>
-        </article>
-      </section>
-
-      <section class="workspace-grid">
-        <aside class="side-panel" *ngIf="canViewUsers">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">People</p>
-              <h2>{{ currentUser?.role === 'manager' ? 'Users and Team Leads' : 'My Team' }}</h2>
-            </div>
-            <button class="icon-button" type="button" (click)="loadUsers()" title="Refresh users" aria-label="Refresh users">
-              <svg lucideRefreshCw aria-hidden="true"></svg>
-            </button>
-          </div>
-
-          <div class="empty-state" *ngIf="!users.length && !isLoadingUsers">No users visible for your role.</div>
-          <div class="user-list">
-            <article class="user-row" *ngFor="let user of users">
-              <div>
-                <strong>{{ user.username }}</strong>
-                <span>{{ user.email }}</span>
-                <small>{{ roleLabel(user.role) }}</small>
-              </div>
-
-              <label class="compact-select" *ngIf="currentUser?.role === 'manager' && user.role === 'employee'">
-                Lead
-                <select [ngModel]="user.teamLeadId || ''" (ngModelChange)="assignLead(user, $event)">
-                  <option value="">Unassigned</option>
-                  <option *ngFor="let lead of teamLeads" [value]="lead.id">{{ lead.username }}</option>
-                </select>
-              </label>
-            </article>
-          </div>
-        </aside>
-
-        <section class="task-area">
-          <form class="task-form" [formGroup]="taskForm" (ngSubmit)="submitTask()">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">{{ editingTask ? 'Edit Task' : 'New Task' }}</p>
-                <h2>{{ editingTask ? editingTask.title : 'Create task' }}</h2>
-              </div>
-              <button class="ghost-button" type="button" *ngIf="editingTask" (click)="resetForm()">Cancel</button>
-            </div>
-
-            <div class="form-grid">
-              <label>
-                Title
-                <input type="text" formControlName="title" placeholder="Task title" />
-                <span class="field-error" *ngIf="taskForm.controls.title.touched && taskForm.controls.title.invalid">
-                  Title must be 2 to 120 characters.
-                </span>
-              </label>
-
-              <label>
-                Status
-                <select formControlName="status">
-                  <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </label>
-
-              <label class="wide">
-                Description
-                <textarea rows="3" formControlName="description" placeholder="Task details"></textarea>
-                <span class="field-error" *ngIf="taskForm.controls.description.touched && taskForm.controls.description.invalid">
-                  Description must be 2 to 1000 characters.
-                </span>
-              </label>
-
-              <label *ngIf="canAssignTasks">
-                Assign to
-                <select formControlName="assignedTo">
-                  <option value="">Self</option>
-                  <option *ngFor="let user of assignableUsers" [value]="user.id">{{ user.username }} - {{ roleLabel(user.role) }}</option>
-                </select>
-              </label>
-            </div>
-
-            <div class="error-box" *ngIf="errorMessage">{{ errorMessage }}</div>
-
-            <button class="primary-button with-icon" type="submit" [disabled]="taskForm.invalid || isSaving">
-              <svg *ngIf="editingTask; else createIcon" lucidePencil aria-hidden="true"></svg>
-              <ng-template #createIcon>
-                <svg lucidePlus aria-hidden="true"></svg>
-              </ng-template>
-              {{ isSaving ? 'Saving...' : editingTask ? 'Update task' : 'Create task' }}
-            </button>
-          </form>
-
-          <section class="task-list-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">Tasks</p>
-                <h2>Visible tasks</h2>
-              </div>
-              <label class="filter-control">
-                <svg lucideListFilter aria-hidden="true"></svg>
-                <select [(ngModel)]="filter" (ngModelChange)="loadTasks()">
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </label>
-            </div>
-
-            <div class="empty-state" *ngIf="!tasks.length && !isLoadingTasks">No tasks found for this filter.</div>
-
-            <article class="task-card" *ngFor="let task of tasks">
-              <div class="task-main">
-                <div>
-                  <span class="status-badge" [class.complete]="task.status === 'completed'">{{ task.status }}</span>
-                  <h3>{{ task.title }}</h3>
-                  <p>{{ task.description }}</p>
-                </div>
-
-                <div class="task-meta">
-                  <span>Created by <strong>{{ task.createdBy.username }}</strong></span>
-                  <span>Assigned to <strong>{{ task.assignedTo.username }}</strong></span>
-                </div>
-              </div>
-
-              <div class="task-actions">
-                <button class="icon-button" type="button" (click)="markComplete(task)" [disabled]="task.status === 'completed'" title="Mark complete" aria-label="Mark complete">
-                  <svg lucideCheckCircle2 aria-hidden="true"></svg>
-                </button>
-                <button class="icon-button" type="button" (click)="editTask(task)" title="Edit task" aria-label="Edit task">
-                  <svg lucidePencil aria-hidden="true"></svg>
-                </button>
-                <button class="icon-button danger" type="button" (click)="deleteTask(task)" title="Delete task" aria-label="Delete task">
-                  <svg lucideTrash2 aria-hidden="true"></svg>
-                </button>
-              </div>
-            </article>
-          </section>
-        </section>
-      </section>
-    </main>
-  `
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly dashboardService = inject(DashboardService);
+  private readonly notificationService = inject(NotificationService);
   private readonly taskService = inject(TaskService);
   private readonly userService = inject(UserService);
   private readonly socketService = inject(SocketService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   currentUser: User | null = null;
+  dashboardOverview: DashboardOverview | null = null;
   tasks: Task[] = [];
   users: User[] = [];
-  filter: TaskFilter = 'all';
+  activeSection: WorkspaceSection = 'dashboard';
+  isTaskComposerOpen = false;
+  isMemberComposerOpen = false;
   editingTask: Task | null = null;
-  errorMessage = '';
-  isSaving = false;
+  isCreatingMember = false;
+  isLoadingDashboard = false;
   isLoadingTasks = false;
   isLoadingUsers = false;
 
   private socketSubscription?: Subscription;
+  private routerSubscription?: Subscription;
+  private dashboardRequestSubscription?: Subscription;
+  private tasksRequestSubscription?: Subscription;
+  private usersRequestSubscription?: Subscription;
+  private dashboardWarmupTimer?: ReturnType<typeof setTimeout>;
+  private taskWarmupTimer?: ReturnType<typeof setTimeout>;
+  private userWarmupTimer?: ReturnType<typeof setTimeout>;
 
-  taskForm = this.fb.nonNullable.group({
-    title: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
-    description: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(1000)]],
-    status: ['pending' as TaskStatus, [Validators.required]],
-    assignedTo: ['']
+  memberForm = this.fb.nonNullable.group({
+    username: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(120)]]
   });
 
   get canViewUsers(): boolean {
@@ -242,35 +123,161 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.currentUser?.role === 'manager' || this.currentUser?.role === 'teamLead';
   }
 
+  get canCreateUsers(): boolean {
+    return this.currentUser?.role === 'manager';
+  }
+
   get assignableUsers(): User[] {
     if (!this.currentUser) {
       return [];
     }
 
+    const currentUserId = this.currentUser.id;
+
     if (this.currentUser.role === 'manager') {
-      return this.users;
+      return this.users.filter((user) => user.id !== currentUserId);
     }
 
     if (this.currentUser.role === 'teamLead') {
-      return this.users.filter((user) => user.id === this.currentUser?.id || user.teamLeadId === this.currentUser?.id);
+      return this.users.filter((user) => user.id !== currentUserId && user.teamLeadId === currentUserId);
     }
 
-    return [this.currentUser];
+    return [];
   }
 
   get teamLeads(): User[] {
     return this.users.filter((user) => user.role === 'teamLead');
   }
 
-  get pendingCount(): number {
-    return this.tasks.filter((task) => task.status === 'pending').length;
+  get employeeUsers(): User[] {
+    return this.users.filter((user) => user.role === 'employee');
   }
 
-  get completedCount(): number {
-    return this.tasks.filter((task) => task.status === 'completed').length;
+  get dashboardStats(): DashboardStats {
+    return this.dashboardOverview?.stats ?? EMPTY_DASHBOARD_STATS;
+  }
+
+  get dashboardStageMetrics(): DashboardStageMetric[] {
+    return (
+      this.dashboardOverview?.stageMetrics ?? [
+        { label: 'Backlog', status: 'backlog', count: 0, percent: 0 },
+        { label: 'In Progress', status: 'inProgress', count: 0, percent: 0 },
+        { label: 'Done', status: 'completed', count: 0, percent: 0 }
+      ]
+    );
+  }
+
+  get dashboardRecentTasks(): Task[] {
+    return this.dashboardOverview?.recentTasks ?? [];
+  }
+
+  get dashboardWorkload(): DashboardWorkload[] {
+    return this.dashboardOverview?.workload ?? [];
+  }
+
+  get isDashboardPage(): boolean {
+    return this.activeSection === 'dashboard';
+  }
+
+  get isTasksPage(): boolean {
+    return this.activeSection === 'tasks';
+  }
+
+  get isTeamPage(): boolean {
+    return this.activeSection === 'team';
+  }
+
+  get isNotificationsPage(): boolean {
+    return this.activeSection === 'notifications';
+  }
+
+  get pageCrumb(): string {
+    const labels: Record<WorkspaceSection, string> = {
+      dashboard: 'Dashboard',
+      tasks: 'Tasks',
+      team: 'Team',
+      notifications: 'Notifications'
+    };
+
+    return labels[this.activeSection];
+  }
+
+  get pageTitle(): string {
+    if (this.isNotificationsPage) {
+      return 'Notifications';
+    }
+
+    if (this.isTeamPage) {
+      return this.currentUser?.role === 'manager' ? 'Workspace team' : 'My team';
+    }
+
+    if (this.isTasksPage) {
+      return this.taskListTitle;
+    }
+
+    return 'Workspace overview';
+  }
+
+  get pageSummary(): string {
+    if (this.isNotificationsPage) {
+      return 'Realtime task updates from your workspace';
+    }
+
+    if (this.isTeamPage) {
+      return this.currentUser?.role === 'manager' ? 'Team leads, employees, and reporting structure' : 'Team members and assigned work ownership';
+    }
+
+    if (this.isTasksPage) {
+      return 'Plan, assign, and move work across stages';
+    }
+
+    return this.roleSummary;
+  }
+
+  get dashboardTitle(): string {
+    const name = this.currentUser?.username?.trim();
+
+    return name ? `${name}'s tasks` : 'Tasks';
+  }
+
+  get roleSummary(): string {
+    if (this.currentUser?.role === 'manager') {
+      return 'Workspace overview and team ownership';
+    }
+
+    if (this.currentUser?.role === 'teamLead') {
+      return 'Team work, assignments, and progress';
+    }
+
+    return 'Personal tasks and account access';
+  }
+
+  get taskListTitle(): string {
+    if (this.currentUser?.role === 'manager') {
+      return 'Workspace tasks';
+    }
+
+    if (this.currentUser?.role === 'teamLead') {
+      return 'Team tasks';
+    }
+
+    return 'My tasks';
+  }
+
+  get currentUserInitial(): string {
+    return this.currentUser?.username?.trim().charAt(0).toUpperCase() || 'U';
   }
 
   ngOnInit(): void {
+    this.activeSection = this.sectionFromUrl(this.router.url);
+    this.routerSubscription = this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        this.activeSection = this.sectionFromUrl(event.urlAfterRedirects);
+        this.enforceSectionAccess();
+        this.refreshActiveSection();
+      });
+
     this.currentUser = this.auth.currentUser;
 
     if (!this.currentUser) {
@@ -288,146 +295,299 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.routerSubscription?.unsubscribe();
     this.socketSubscription?.unsubscribe();
+    this.dashboardRequestSubscription?.unsubscribe();
+    this.tasksRequestSubscription?.unsubscribe();
+    this.usersRequestSubscription?.unsubscribe();
+    this.clearWarmupTimers();
     this.socketService.disconnect();
   }
 
   initializeDashboard(): void {
-    this.loadTasks();
+    this.enforceSectionAccess();
+    this.refreshActiveSection();
 
-    if (this.canViewUsers) {
-      this.loadUsers();
-    }
+    this.socketService.connect();
+    this.socketSubscription = this.socketService.onTaskChanges().subscribe((payload) => {
+      this.notificationService.addTaskNotification(payload);
 
-    const token = this.auth.token;
+      if (this.isDashboardPage) {
+        this.loadDashboardOverview();
+      }
 
-    if (token) {
-      this.socketService.connect(token);
-      this.socketSubscription = this.socketService.onTaskChanges().subscribe(() => {
+      if (this.isTasksPage) {
         this.loadTasks();
-      });
-    }
-  }
-
-  loadTasks(): void {
-    this.isLoadingTasks = true;
-    const status = this.filter === 'all' ? undefined : this.filter;
-
-    this.taskService.list(status).subscribe({
-      next: (response) => {
-        this.tasks = response.data;
-        this.isLoadingTasks = false;
-      },
-      error: (error) => {
-        this.errorMessage = error?.error?.message ?? 'Unable to load tasks.';
-        this.isLoadingTasks = false;
       }
     });
   }
 
-  loadUsers(): void {
-    this.isLoadingUsers = true;
-
-    this.userService.list().subscribe({
-      next: (response) => {
-        this.users = response.data;
-        this.isLoadingUsers = false;
-      },
-      error: () => {
-        this.users = [];
-        this.isLoadingUsers = false;
-      }
-    });
-  }
-
-  submitTask(): void {
-    if (this.taskForm.invalid) {
-      this.taskForm.markAllAsTouched();
+  enforceSectionAccess(): void {
+    if (!this.currentUser || !this.isTeamPage || this.canViewUsers) {
       return;
     }
 
-    this.isSaving = true;
-    this.errorMessage = '';
+    this.toast.error('Team page is available for managers and team leads only.');
+    void this.router.navigate(['/tasks']);
+  }
 
-    const rawValue = this.taskForm.getRawValue();
-    const payload: TaskFormPayload = {
-      title: rawValue.title,
-      description: rawValue.description,
-      status: rawValue.status,
-      ...(this.canAssignTasks && rawValue.assignedTo ? { assignedTo: rawValue.assignedTo } : {})
-    };
+  refreshActiveSection(): void {
+    this.refreshSectionData(this.activeSection);
+  }
 
-    const request = this.editingTask
-      ? this.taskService.update(this.editingTask.id, payload)
-      : this.taskService.create(payload);
+  prefetchSection(section: WorkspaceSection): void {
+    this.activeSection = section;
+    this.refreshSectionData(section);
+  }
 
-    request.subscribe({
-      next: () => {
-        this.resetForm();
+  private refreshSectionData(section: WorkspaceSection): void {
+    if (!this.currentUser) {
+      return;
+    }
+
+    if (section === 'dashboard') {
+      this.loadDashboardOverviewWithWarmup();
+    }
+
+    if (section === 'tasks') {
+      this.loadTasksWithWarmup();
+    }
+
+    if (this.canViewUsers) {
+      this.loadUsersWithWarmup();
+    }
+  }
+
+  private loadDashboardOverviewWithWarmup(): void {
+    this.loadDashboardOverview();
+    clearTimeout(this.dashboardWarmupTimer);
+
+    this.dashboardWarmupTimer = setTimeout(() => {
+      if (this.currentUser && this.isDashboardPage && !this.dashboardOverview && !this.isLoadingDashboard) {
+        this.loadDashboardOverview();
+      }
+    }, 450);
+  }
+
+  private loadTasksWithWarmup(): void {
+    this.loadTasks();
+    clearTimeout(this.taskWarmupTimer);
+
+    this.taskWarmupTimer = setTimeout(() => {
+      if (this.currentUser && !this.isTeamPage && !this.tasks.length) {
         this.loadTasks();
-        this.isSaving = false;
+      }
+    }, 450);
+  }
+
+  private loadUsersWithWarmup(): void {
+    this.loadUsers();
+    clearTimeout(this.userWarmupTimer);
+
+    this.userWarmupTimer = setTimeout(() => {
+      if (this.currentUser && this.canViewUsers && !this.users.length) {
+        this.loadUsers();
+      }
+    }, 450);
+  }
+
+  loadDashboardOverview(): void {
+    if (this.isLoadingDashboard) {
+      return;
+    }
+
+    this.dashboardRequestSubscription?.unsubscribe();
+    this.isLoadingDashboard = true;
+
+    this.dashboardRequestSubscription = this.dashboardService
+      .overview()
+      .pipe(
+        finalize(() => {
+          this.isLoadingDashboard = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+      next: (overview) => {
+        this.dashboardOverview = this.normalizeDashboardOverview(overview);
+        this.isLoadingDashboard = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message ?? 'Unable to save task.';
-        this.isSaving = false;
+        this.dashboardOverview = null;
+        this.isLoadingDashboard = false;
+        this.toast.fromError(error, 'Unable to load dashboard.');
+        this.cdr.markForCheck();
       }
     });
+  }
+
+  private normalizeDashboardOverview(overview: DashboardOverview): DashboardOverview {
+    return {
+      stats: overview?.stats ?? EMPTY_DASHBOARD_STATS,
+      stageMetrics: overview?.stageMetrics ?? [],
+      recentTasks: overview?.recentTasks ?? [],
+      workload: overview?.workload ?? []
+    };
+  }
+
+  loadTasks(): void {
+    this.tasksRequestSubscription?.unsubscribe();
+    this.isLoadingTasks = true;
+
+    this.tasksRequestSubscription = this.taskService
+      .list()
+      .pipe(
+        finalize(() => {
+          this.isLoadingTasks = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (tasks) => {
+          this.tasks = tasks ?? [];
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          this.tasks = [];
+          this.toast.fromError(error, 'Unable to load tasks.');
+        }
+      });
+  }
+
+  loadUsers(): void {
+    this.usersRequestSubscription?.unsubscribe();
+    this.isLoadingUsers = true;
+
+    this.usersRequestSubscription = this.userService
+      .list()
+      .pipe(
+        finalize(() => {
+          this.isLoadingUsers = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (users) => {
+          this.users = users ?? [];
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.users = [];
+          this.toast.error('Unable to load team members.');
+        }
+      });
+  }
+
+  private clearWarmupTimers(): void {
+    clearTimeout(this.dashboardWarmupTimer);
+    clearTimeout(this.taskWarmupTimer);
+    clearTimeout(this.userWarmupTimer);
   }
 
   editTask(task: Task): void {
     this.editingTask = task;
-    this.taskForm.patchValue({
-      title: task.title,
-      description: task.description,
-      status: task.status,
-      assignedTo: task.assignedTo.id
-    });
+    this.isTaskComposerOpen = true;
+    this.refreshAssignableUsers();
   }
 
-  markComplete(task: Task): void {
-    if (task.status === 'completed') {
+  openTaskComposer(): void {
+    this.editingTask = null;
+    this.isTaskComposerOpen = true;
+    this.refreshAssignableUsers();
+  }
+
+  closeTaskComposer(): void {
+    this.editingTask = null;
+    this.isTaskComposerOpen = false;
+  }
+
+  handleTaskSaved(): void {
+    this.closeTaskComposer();
+    this.refreshTaskDataAfterMutation();
+  }
+
+  handleTaskChanged(): void {
+    this.refreshTaskDataAfterMutation();
+  }
+
+  openMemberComposer(): void {
+    this.resetMemberForm();
+    this.isMemberComposerOpen = true;
+  }
+
+  closeMemberComposer(): void {
+    this.resetMemberForm();
+    this.isMemberComposerOpen = false;
+  }
+
+  submitMember(): void {
+    if (this.memberForm.invalid) {
+      this.memberForm.markAllAsTouched();
+      this.toast.error('Please complete the required member fields.', 'Check the member');
       return;
     }
 
-    this.taskService.update(task.id, { status: 'completed' }).subscribe({
-      next: () => this.loadTasks(),
+    this.isCreatingMember = true;
+
+    const rawValue = this.memberForm.getRawValue();
+    const payload: CreateUserPayload = {
+      username: rawValue.username,
+      email: rawValue.email,
+      password: rawValue.password,
+      role: 'teamLead'
+    };
+
+    this.userService.create(payload).subscribe({
+      next: (response) => {
+        this.closeMemberComposer();
+        this.loadUsers();
+        this.toast.success(`${this.roleLabel(response.data.role)} created successfully.`, 'Team lead added');
+        this.isCreatingMember = false;
+      },
       error: (error) => {
-        this.errorMessage = error?.error?.message ?? 'Unable to update task status.';
-      }
-    });
-  }
-
-  deleteTask(task: Task): void {
-    const confirmed = window.confirm(`Delete task "${task.title}"?`);
-
-    if (!confirmed) {
-      return;
-    }
-
-    this.taskService.delete(task.id).subscribe({
-      next: () => this.loadTasks(),
-      error: (error) => {
-        this.errorMessage = error?.error?.message ?? 'Unable to delete task.';
+        this.toast.fromError(error, 'Unable to create team lead.');
+        this.isCreatingMember = false;
       }
     });
   }
 
   assignLead(user: User, teamLeadId: string): void {
     this.userService.assignTeamLead(user.id, teamLeadId || null).subscribe({
-      next: () => this.loadUsers(),
+      next: () => {
+        this.loadUsers();
+        if (this.isDashboardPage) {
+          this.loadDashboardOverview();
+        }
+        this.toast.success('Team lead assignment updated.', 'Updated');
+      },
       error: (error) => {
-        this.errorMessage = error?.error?.message ?? 'Unable to update team lead.';
+        this.toast.fromError(error, 'Unable to update team lead.');
       }
     });
   }
 
-  resetForm(): void {
-    this.editingTask = null;
-    this.taskForm.reset({
-      title: '',
-      description: '',
-      status: 'pending',
-      assignedTo: ''
+  private refreshTaskDataAfterMutation(): void {
+    if (this.isDashboardPage) {
+      this.loadDashboardOverview();
+    }
+
+    if (this.isTasksPage) {
+      this.loadTasks();
+    }
+  }
+
+  private refreshAssignableUsers(): void {
+    if (this.canAssignTasks) {
+      this.loadUsers();
+    }
+  }
+
+  private resetMemberForm(): void {
+    this.memberForm.reset({
+      username: '',
+      email: '',
+      password: ''
     });
   }
 
@@ -439,6 +599,59 @@ export class DashboardComponent implements OnInit, OnDestroy {
     };
 
     return labels[role];
+  }
+
+  statusLabel(status: TaskStatus | string): string {
+    const labels: Record<TaskStatus, string> = {
+      backlog: 'Backlog',
+      inProgress: 'In Progress',
+      completed: 'Done'
+    };
+
+    return labels[this.normalizeStatusValue(status)];
+  }
+
+  normalizedStatus(task: Task): TaskStatus {
+    return this.normalizeStatusValue(task.status);
+  }
+
+  private normalizeStatusValue(status: TaskStatus | string): TaskStatus {
+    return status === 'pending' ? 'backlog' : (status as TaskStatus);
+  }
+
+  taskCountLabel(count: number): string {
+    return count === 1 ? 'task' : 'tasks';
+  }
+
+  formatDate(value: string): string {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(value));
+  }
+
+  formatShortDate(value: string): string {
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric'
+    }).format(new Date(value));
+  }
+
+  private sectionFromUrl(url: string): WorkspaceSection {
+    if (url.startsWith('/notifications')) {
+      return 'notifications';
+    }
+
+    if (url.startsWith('/team')) {
+      return 'team';
+    }
+
+    if (url.startsWith('/tasks')) {
+      return 'tasks';
+    }
+
+    return 'dashboard';
   }
 
   logout(): void {

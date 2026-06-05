@@ -1,0 +1,48 @@
+<main class="auth-page">
+  <section class="auth-shell">
+    <div class="brand-panel">
+      <p class="eyebrow">Eminence Tasks</p>
+      <h1>Workspace Command Center</h1>
+    </div>
+
+    <form class="auth-card" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="auth-heading">
+        <span class="heading-icon">
+          <svg lucideLogIn aria-hidden="true"></svg>
+        </span>
+        <div>
+          <p class="eyebrow">Sign In</p>
+          <h2>Welcome back</h2>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>Email</span>
+        <div class="control">
+          <svg lucideMail aria-hidden="true"></svg>
+          <input type="email" formControlName="email" autocomplete="email" placeholder="you@company.com" />
+        </div>
+        <small *ngIf="form.controls.email.touched && form.controls.email.invalid">Enter a valid email.</small>
+      </label>
+
+      <label class="field">
+        <span>Password</span>
+        <div class="control">
+          <svg lucideLock aria-hidden="true"></svg>
+          <input type="password" formControlName="password" autocomplete="current-password" placeholder="Enter your password" />
+        </div>
+        <small *ngIf="form.controls.password.touched && form.controls.password.invalid">Password is required.</small>
+      </label>
+
+      <button class="primary-button" type="submit" [disabled]="form.invalid || isSubmitting">
+        <span>{{ isSubmitting ? 'Signing in' : 'Sign in' }}</span>
+        <svg lucideArrowRight aria-hidden="true"></svg>
+      </button>
+
+      <p class="switch-link">
+        New here?
+        <a routerLink="/register">Create account</a>
+      </p>
+    </form>
+  </section>
+</main>

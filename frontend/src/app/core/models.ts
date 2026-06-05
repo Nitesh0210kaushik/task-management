@@ -1,5 +1,5 @@
 export type UserRole = 'manager' | 'teamLead' | 'employee';
-export type TaskStatus = 'pending' | 'completed';
+export type TaskStatus = 'backlog' | 'inProgress' | 'completed';
 
 export interface User {
   id: string;
@@ -31,12 +31,21 @@ export interface AuthPayload {
   username?: string;
   email: string;
   password: string;
-  role?: UserRole;
 }
 
 export interface AuthResponse {
+  accessToken: string;
   token: string;
   user: User;
+}
+
+export interface Session {
+  id: string;
+  userAgent?: string;
+  ip?: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
 }
 
 export interface TaskRealtimePayload {
@@ -45,3 +54,28 @@ export interface TaskRealtimePayload {
   task: Task;
 }
 
+export interface DashboardStats {
+  total: number;
+  backlog: number;
+  inProgress: number;
+  completed: number;
+  completionRate: number;
+}
+
+export interface DashboardStageMetric {
+  label: string;
+  status: TaskStatus;
+  count: number;
+  percent: number;
+}
+
+export interface DashboardWorkload extends DashboardStats {
+  user: User;
+}
+
+export interface DashboardOverview {
+  stats: DashboardStats;
+  stageMetrics: DashboardStageMetric[];
+  recentTasks: Task[];
+  workload: DashboardWorkload[];
+}

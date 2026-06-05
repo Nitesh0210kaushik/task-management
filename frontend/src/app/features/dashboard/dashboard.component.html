@@ -1,0 +1,366 @@
+<main class="workspace-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">E</span>
+      <strong>Eminence Tasks</strong>
+    </div>
+
+    <div class="workspace-card" *ngIf="currentUser">
+      <span class="workspace-avatar">{{ currentUserInitial }}</span>
+      <div>
+        <small>Workspace</small>
+        <strong>{{ roleLabel(currentUser.role) }} Access</strong>
+      </div>
+    </div>
+
+    <nav class="side-nav" aria-label="Workspace navigation">
+      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="prefetchSection('dashboard')">
+        <svg lucideLayoutDashboard aria-hidden="true"></svg>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/tasks" routerLinkActive="active" (click)="prefetchSection('tasks')">
+        <svg lucideListTodo aria-hidden="true"></svg>
+        <span>Tasks</span>
+      </a>
+      <a *ngIf="canViewUsers" routerLink="/team" routerLinkActive="active" (click)="prefetchSection('team')">
+        <svg lucideUsers aria-hidden="true"></svg>
+        <span>Team</span>
+      </a>
+      <app-notification-nav-item [active]="isNotificationsPage"></app-notification-nav-item>
+    </nav>
+
+    <button class="logout-link" type="button" (click)="logout()">
+      <svg lucideLogOut aria-hidden="true"></svg>
+      <span>Logout</span>
+    </button>
+  </aside>
+
+  <section class="content-shell">
+    <header class="content-topbar">
+      <div class="breadcrumb">
+        <span>/</span>
+        <strong>{{ pageCrumb }}</strong>
+      </div>
+
+      <div class="topbar-actions">
+        <app-notification-bell></app-notification-bell>
+
+        <div class="user-chip" *ngIf="currentUser">
+          <span>{{ currentUserInitial }}</span>
+          <div>
+            <strong>{{ currentUser.username }}</strong>
+            <small>{{ roleLabel(currentUser.role) }}</small>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="page-heading">
+      <div>
+        <h1>{{ pageTitle }}</h1>
+        <p>{{ pageSummary }}</p>
+      </div>
+      <button class="new-task-button" type="button" *ngIf="isDashboardPage || isTasksPage" (click)="openTaskComposer()">
+        <svg lucidePlus aria-hidden="true"></svg>
+        <span>New Task</span>
+      </button>
+      <button class="new-task-button secondary" type="button" *ngIf="isTeamPage && canCreateUsers" (click)="openMemberComposer()">
+        <svg lucidePlus aria-hidden="true"></svg>
+        <span>Add Team Lead</span>
+      </button>
+      <button class="new-task-button secondary" type="button" *ngIf="isTeamPage && canViewUsers && !canCreateUsers" (click)="loadUsers()">
+        <svg lucideRefreshCw aria-hidden="true"></svg>
+        <span>Refresh Team</span>
+      </button>
+    </section>
+
+    <section class="stats-grid" *ngIf="isDashboardPage">
+      <article class="stat-card total">
+        <span class="stat-icon">
+          <svg lucideListTodo aria-hidden="true"></svg>
+        </span>
+        <div>
+          <strong>{{ dashboardStats.total }}</strong>
+          <span>All Tasks</span>
+        </div>
+      </article>
+      <article class="stat-card backlog">
+        <span class="stat-icon">
+          <svg lucideListFilter aria-hidden="true"></svg>
+        </span>
+        <div>
+          <strong>{{ dashboardStats.backlog }}</strong>
+          <span>Backlog</span>
+        </div>
+      </article>
+      <article class="stat-card active">
+        <span class="stat-icon">
+          <svg lucideArrowRight aria-hidden="true"></svg>
+        </span>
+        <div>
+          <strong>{{ dashboardStats.inProgress }}</strong>
+          <span>In Progress</span>
+        </div>
+      </article>
+      <article class="stat-card done">
+        <span class="stat-icon">
+          <svg lucideCheckCircle2 aria-hidden="true"></svg>
+        </span>
+        <div>
+          <strong>{{ dashboardStats.completed }}</strong>
+          <span>Done</span>
+        </div>
+      </article>
+    </section>
+
+    <div class="loading-strip dashboard-loading" *ngIf="isDashboardPage && isLoadingDashboard">Loading dashboard...</div>
+
+    <section class="dashboard-overview" *ngIf="isDashboardPage">
+      <article class="overview-panel workflow-panel">
+        <div class="panel-heading compact">
+          <div>
+            <span>Workflow</span>
+            <h2>Task health</h2>
+          </div>
+          <strong>{{ dashboardStats.completionRate }}%</strong>
+        </div>
+
+        <div class="stage-list">
+          <div class="stage-row" *ngFor="let metric of dashboardStageMetrics">
+            <div>
+              <span>{{ metric.label }}</span>
+              <strong>{{ metric.count }} {{ taskCountLabel(metric.count) }}</strong>
+            </div>
+            <div class="stage-meter" [class.active]="metric.status === 'inProgress'" [class.complete]="metric.status === 'completed'">
+              <i [style.width.%]="metric.percent"></i>
+            </div>
+            <em>{{ metric.percent }}%</em>
+          </div>
+        </div>
+      </article>
+
+      <article class="overview-panel recent-panel">
+        <div class="panel-heading compact">
+          <div>
+            <span>Recent</span>
+            <h2>Latest work</h2>
+          </div>
+          <a routerLink="/tasks">View all</a>
+        </div>
+
+        <div class="recent-list" *ngIf="dashboardRecentTasks.length; else noRecentTasks">
+          <article class="recent-row" *ngFor="let task of dashboardRecentTasks">
+            <span class="row-dot" [class.active]="normalizedStatus(task) === 'inProgress'" [class.done]="normalizedStatus(task) === 'completed'"></span>
+            <div>
+              <strong>{{ task.title }}</strong>
+              <small>{{ task.assignedTo.username }} - {{ formatShortDate(task.updatedAt) }}</small>
+            </div>
+            <em class="status-badge" [class.active]="normalizedStatus(task) === 'inProgress'" [class.complete]="normalizedStatus(task) === 'completed'">
+              {{ statusLabel(task.status) }}
+            </em>
+          </article>
+        </div>
+
+        <ng-template #noRecentTasks>
+          <p class="empty-copy">No tasks found.</p>
+        </ng-template>
+      </article>
+
+      <article class="overview-panel workload-panel">
+        <div class="panel-heading compact">
+          <div>
+            <span>Ownership</span>
+            <h2>Workload</h2>
+          </div>
+          <strong>{{ dashboardWorkload.length }}</strong>
+        </div>
+
+        <div class="workload-list" *ngIf="dashboardWorkload.length; else noWorkload">
+          <article class="workload-row" *ngFor="let summary of dashboardWorkload">
+            <span>{{ summary.user.username.charAt(0).toUpperCase() }}</span>
+            <div>
+              <strong>{{ summary.user.username }}</strong>
+              <small>{{ summary.inProgress }} active / {{ summary.total }} total</small>
+              <div class="stage-meter complete">
+                <i [style.width.%]="summary.completionRate"></i>
+              </div>
+            </div>
+            <em>{{ summary.completionRate }}%</em>
+          </article>
+        </div>
+
+        <ng-template #noWorkload>
+          <p class="empty-copy">No workload yet.</p>
+        </ng-template>
+      </article>
+
+      <article class="overview-panel action-panel">
+        <div class="panel-heading compact">
+          <div>
+            <span>Actions</span>
+            <h2>Quick links</h2>
+          </div>
+        </div>
+
+        <div class="action-list">
+          <button type="button" (click)="openTaskComposer()">
+            <svg lucidePlus aria-hidden="true"></svg>
+            <span>New Task</span>
+          </button>
+          <a routerLink="/tasks">
+            <svg lucideListTodo aria-hidden="true"></svg>
+            <span>Tasks</span>
+          </a>
+          <a *ngIf="canViewUsers" routerLink="/team">
+            <svg lucideUsers aria-hidden="true"></svg>
+            <span>Team</span>
+          </a>
+        </div>
+      </article>
+    </section>
+
+    <app-task-form-modal
+      *ngIf="isTaskComposerOpen"
+      [editingTask]="editingTask"
+      [canAssignTasks]="canAssignTasks"
+      [assignableUsers]="assignableUsers"
+      [currentUserId]="currentUser?.id || null"
+      (closed)="closeTaskComposer()"
+      (saved)="handleTaskSaved()"
+    ></app-task-form-modal>
+
+    <div class="modal-backdrop" *ngIf="isMemberComposerOpen" (click)="closeMemberComposer()">
+      <form
+        class="task-modal member-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="member-modal-title"
+        [formGroup]="memberForm"
+        (ngSubmit)="submitMember()"
+        (keydown.escape)="closeMemberComposer()"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="composer-heading">
+          <div>
+            <span>Team lead</span>
+            <h2 id="member-modal-title">Add team lead</h2>
+          </div>
+          <button type="button" (click)="closeMemberComposer()" title="Close form" aria-label="Close form">
+            <svg lucideX aria-hidden="true"></svg>
+          </button>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            <span>Name</span>
+            <input type="text" formControlName="username" placeholder="Demo Team Lead" />
+            <small *ngIf="memberForm.controls.username.touched && memberForm.controls.username.invalid">Name must be 2 to 80 characters.</small>
+          </label>
+
+          <label>
+            <span>Email</span>
+            <input type="email" formControlName="email" placeholder="member@company.com" />
+            <small *ngIf="memberForm.controls.email.touched && memberForm.controls.email.invalid">Enter a valid email.</small>
+          </label>
+
+          <label>
+            <span>Password</span>
+            <input type="password" formControlName="password" placeholder="Minimum 8 characters" />
+            <small *ngIf="memberForm.controls.password.touched && memberForm.controls.password.invalid">Password must be at least 8 characters.</small>
+          </label>
+
+        </div>
+
+        <button class="save-button" type="submit" [disabled]="memberForm.invalid || isCreatingMember">
+          <svg lucidePlus aria-hidden="true"></svg>
+          <span>{{ isCreatingMember ? 'Creating' : 'Create team lead' }}</span>
+        </button>
+      </form>
+    </div>
+
+    <app-task-workspace
+      *ngIf="isTasksPage"
+      [tasks]="tasks"
+      [isLoading]="isLoadingTasks"
+      (editRequested)="editTask($event)"
+      (taskChanged)="handleTaskChanged()"
+    ></app-task-workspace>
+
+    <section class="team-panel" *ngIf="canViewUsers && isTeamPage">
+      <div class="team-heading">
+        <div>
+          <span>People</span>
+          <h2>{{ currentUser?.role === 'manager' ? 'Workspace team' : 'My team' }}</h2>
+        </div>
+        <div class="team-actions">
+          <button *ngIf="canCreateUsers" type="button" (click)="openMemberComposer()" title="Add team lead" aria-label="Add team lead">
+            <svg lucidePlus aria-hidden="true"></svg>
+          </button>
+          <button type="button" (click)="loadUsers()" title="Refresh team" aria-label="Refresh team">
+            <svg lucideRefreshCw aria-hidden="true"></svg>
+          </button>
+        </div>
+      </div>
+
+      <section class="team-section" *ngIf="currentUser?.role === 'manager'">
+        <div class="team-section-head">
+          <div>
+            <span>Role group</span>
+            <h3>Team Leads</h3>
+          </div>
+          <strong>{{ teamLeads.length }}</strong>
+        </div>
+
+        <div class="team-grid" *ngIf="teamLeads.length; else noTeamLeads">
+          <article class="team-card" *ngFor="let user of teamLeads">
+            <span>{{ user.username.charAt(0).toUpperCase() }}</span>
+            <div>
+              <strong>{{ user.username }}</strong>
+              <small>{{ user.email }}</small>
+              <em>{{ roleLabel(user.role) }}</em>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #noTeamLeads>
+          <p class="empty-copy">{{ isLoadingUsers ? 'Loading team leads...' : 'No team leads found.' }}</p>
+        </ng-template>
+      </section>
+
+      <section class="team-section">
+        <div class="team-section-head">
+          <div>
+            <span>{{ currentUser?.role === 'manager' ? 'Assignment' : 'Members' }}</span>
+            <h3>{{ currentUser?.role === 'manager' ? 'Employees' : 'Team members' }}</h3>
+          </div>
+          <strong>{{ employeeUsers.length }}</strong>
+        </div>
+
+        <div class="team-grid" *ngIf="employeeUsers.length; else noEmployees">
+          <article class="team-card" *ngFor="let user of employeeUsers">
+            <span>{{ user.username.charAt(0).toUpperCase() }}</span>
+            <div>
+              <strong>{{ user.username }}</strong>
+              <small>{{ user.email }}</small>
+              <em>{{ roleLabel(user.role) }}</em>
+            </div>
+
+            <label *ngIf="currentUser?.role === 'manager'">
+              <small>Reports to</small>
+              <select [ngModel]="user.teamLeadId || ''" (ngModelChange)="assignLead(user, $event)">
+                <option value="">Unassigned</option>
+                <option *ngFor="let lead of teamLeads" [value]="lead.id">{{ lead.username }}</option>
+              </select>
+            </label>
+          </article>
+        </div>
+
+        <ng-template #noEmployees>
+          <p class="empty-copy">{{ isLoadingUsers ? 'Loading employees...' : currentUser?.role === 'manager' ? 'No employees found.' : 'No team members found.' }}</p>
+        </ng-template>
+      </section>
+    </section>
+
+    <app-notification-page *ngIf="isNotificationsPage"></app-notification-page>
+  </section>
+</main>

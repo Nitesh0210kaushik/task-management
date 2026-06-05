@@ -1,0 +1,31 @@
+<div class="notification-control">
+  <button
+    class="notification-button"
+    type="button"
+    title="Notifications"
+    aria-label="Notifications"
+    [attr.aria-expanded]="isMenuOpen"
+    (click)="toggleMenu()"
+  >
+    <svg lucideBell aria-hidden="true"></svg>
+    <span *ngIf="unreadNotificationCount">{{ unreadNotificationCount > 9 ? '9+' : unreadNotificationCount }}</span>
+  </button>
+
+  <section class="notification-menu" *ngIf="isMenuOpen" aria-label="Recent notifications">
+    <div class="notification-menu-head">
+      <div>
+        <span>Live updates</span>
+        <strong>Notifications</strong>
+      </div>
+      <em>{{ unreadNotificationCount }} unread</em>
+    </div>
+
+    <app-notification-list
+      [notifications]="topNotifications"
+      variant="compact"
+      emptyText="No live notifications yet."
+    ></app-notification-list>
+
+    <button class="see-all-button" type="button" (click)="openNotificationsPage()">See all</button>
+  </section>
+</div>

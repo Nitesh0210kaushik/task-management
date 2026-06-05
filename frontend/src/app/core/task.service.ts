@@ -1,8 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { ApiResponse, Task, TaskStatus } from './models';
+
+type TaskListResponse = ApiResponse<Task[]> | Task[];
 
 export interface TaskFormPayload {
   title: string;
@@ -15,9 +17,11 @@ export interface TaskFormPayload {
 export class TaskService {
   private readonly http = inject(HttpClient);
 
-  list(status?: TaskStatus): Observable<ApiResponse<Task[]>> {
+  list(status?: TaskStatus): Observable<Task[]> {
     const params = status ? new HttpParams().set('status', status) : undefined;
-    return this.http.get<ApiResponse<Task[]>>(`${environment.apiUrl}/tasks`, { params });
+    return this.http
+      .get<TaskListResponse>(`${environment.apiUrl}/tasks`, { params })
+      .pipe(map((response) => (Array.isArray(response) ? response : response.data)));
   }
 
   create(payload: TaskFormPayload): Observable<ApiResponse<Task>> {
@@ -32,4 +36,3 @@ export class TaskService {
     return this.http.delete<ApiResponse<{ id: string }>>(`${environment.apiUrl}/tasks/${id}`);
   }
 }
-

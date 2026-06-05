@@ -1,0 +1,131 @@
+:host {
+  position: relative;
+  display: block;
+}
+
+.notification-control {
+  position: relative;
+}
+
+.notification-button {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f766e;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.notification-button:hover {
+  border-color: #0f766e;
+  background: #eef4f3;
+}
+
+.notification-button span {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #b45309;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 950;
+}
+
+.notification-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 700;
+  width: min(360px, calc(100vw - 36px));
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.2);
+}
+
+.notification-menu::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  right: 18px;
+  width: 14px;
+  height: 14px;
+  border-left: 1px solid #d8dee8;
+  border-top: 1px solid #d8dee8;
+  background: #ffffff;
+  transform: rotate(45deg);
+}
+
+.notification-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.notification-menu-head span {
+  color: #647084;
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.notification-menu-head strong {
+  display: block;
+  margin: 2px 0 0;
+  color: #111827;
+}
+
+.notification-menu-head em {
+  color: #0f766e;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.see-all-button {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 12px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f766e;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.see-all-button:hover {
+  border-color: #0f766e;
+  background: #eef4f3;
+}
+
+svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 860px) {
+  .notification-menu {
+    left: 0;
+    right: auto;
+  }
+
+  .notification-menu::before {
+    left: 18px;
+    right: auto;
+  }
+}

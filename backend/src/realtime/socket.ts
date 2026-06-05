@@ -1,17 +1,20 @@
 import type { Server } from 'socket.io';
-import { User } from '../models/User';
-import { verifyAuthToken } from '../utils/jwt';
+import { env } from '../config/env';
+import { User } from '../modules/users/models/user.model';
+import { parseCookieHeader } from '../modules/auth/utils/cookie.util';
+import { verifyAccessToken } from '../modules/auth/utils/jwt.util';
 
 export const configureSocket = (io: Server): void => {
   io.use(async (socket, next) => {
     try {
-      const token = socket.handshake.auth?.token;
+      const cookies = parseCookieHeader(socket.handshake.headers.cookie);
+      const token = socket.handshake.auth?.token ?? cookies[env.accessTokenCookieName];
 
       if (!token || typeof token !== 'string') {
         return next(new Error('Authentication token is required.'));
       }
 
-      const payload = verifyAuthToken(token);
+      const payload = verifyAccessToken(token);
       const user = await User.findById(payload.sub);
 
       if (!user) {
@@ -34,4 +37,3 @@ export const configureSocket = (io: Server): void => {
     }
   });
 };
-

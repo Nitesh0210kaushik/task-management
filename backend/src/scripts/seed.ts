@@ -1,6 +1,7 @@
 import { connectDatabase } from '../config/database';
-import { Task } from '../models/Task';
-import { User } from '../models/User';
+import { TASK_STATUSES } from '../constants/task-status';
+import { Task } from '../modules/tasks/models/task.model';
+import { User } from '../modules/users/models/user.model';
 
 const seed = async (): Promise<void> => {
   await connectDatabase();
@@ -34,21 +35,21 @@ const seed = async (): Promise<void> => {
     {
       title: 'Prepare onboarding checklist',
       description: 'Create a concise onboarding checklist for new engineering team members.',
-      status: 'pending',
+      status: TASK_STATUSES.BACKLOG,
       createdBy: manager._id,
       assignedTo: lead._id
     },
     {
       title: 'Update task API validation',
       description: 'Review task payload validation and verify error responses.',
-      status: 'pending',
+      status: TASK_STATUSES.IN_PROGRESS,
       createdBy: lead._id,
       assignedTo: employee._id
     },
     {
       title: 'Submit daily progress note',
       description: 'Add progress notes for today and mark the task complete after review.',
-      status: 'completed',
+      status: TASK_STATUSES.COMPLETED,
       createdBy: employee._id,
       assignedTo: employee._id
     }
@@ -65,4 +66,3 @@ seed().catch((error) => {
   console.error('Seed failed:', error);
   process.exit(1);
 });
-

@@ -1,0 +1,16 @@
+<section class="notifications-page">
+  <div class="notifications-page-head">
+    <div>
+      <span>Realtime</span>
+      <h2>Workspace activity</h2>
+    </div>
+    <button type="button" (click)="markNotificationsRead()" [disabled]="!unreadNotificationCount">Mark read</button>
+  </div>
+
+  <app-notification-list
+    class="page-list"
+    [notifications]="notifications"
+    variant="grid"
+    emptyText="No notifications yet."
+  ></app-notification-list>
+</section>
