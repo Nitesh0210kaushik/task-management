@@ -28,7 +28,10 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Local planning/reference docs
+document.md
+sprint.md
+
 document.md/
 sprint.md/
-
 
