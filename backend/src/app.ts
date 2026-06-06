@@ -63,6 +63,12 @@ export const createApp = () => {
 
   app.use(
     helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          'img-src': ["'self'", 'data:', 'https://images.unsplash.com']
+        }
+      },
       crossOriginResourcePolicy: false
     })
   );
