@@ -2,14 +2,14 @@
   <div class="toolbar">
     <label class="search-box">
       <svg lucideSearch aria-hidden="true"></svg>
-      <input type="search" [(ngModel)]="searchTerm" [ngModelOptions]="{ standalone: true }" placeholder="Search tasks..." />
+      <input type="search" [ngModel]="searchInput" [ngModelOptions]="{ standalone: true }" (ngModelChange)="changeSearchTerm($event)" placeholder="Search tasks..." />
     </label>
 
     <label class="filter-control">
       <svg lucideListFilter aria-hidden="true"></svg>
-      <select [(ngModel)]="filter">
+      <select [ngModel]="filter" (ngModelChange)="changeFilter($event)">
         <option value="all">All tasks</option>
-        <option value="backlog">Backlog only</option>
+        <option value="backlog">Pending only</option>
         <option value="inProgress">In Progress only</option>
         <option value="completed">Done only</option>
       </select>
@@ -239,4 +239,44 @@
       </article>
     </section>
   </ng-template>
+
+  <div class="delete-modal-backdrop" *ngIf="taskPendingDelete as taskToDelete" (click)="closeDeleteConfirmation()">
+    <section
+      class="delete-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-task-title"
+      (click)="$event.stopPropagation()"
+      (keydown.escape)="closeDeleteConfirmation()"
+    >
+      <div class="delete-modal-head">
+        <button type="button" (click)="closeDeleteConfirmation()" [disabled]="isDeletingTask" title="Close" aria-label="Close delete confirmation">
+          <svg lucideX aria-hidden="true"></svg>
+        </button>
+      </div>
+
+      <div class="delete-modal-copy">
+        <h2 id="delete-task-title">Delete task?</h2>
+        <p>Are you sure you want to delete <strong>{{ taskToDelete.title }}</strong>? This task will be removed from active task views.</p>
+        <dl>
+          <div>
+            <dt>Owner</dt>
+            <dd>{{ taskToDelete.assignedTo.username }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ statusLabel(taskToDelete.status) }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="delete-modal-actions">
+        <button class="ghost-button" type="button" (click)="closeDeleteConfirmation()" [disabled]="isDeletingTask">Cancel</button>
+        <button class="delete-button" type="button" (click)="confirmDeleteTask()" [disabled]="isDeletingTask">
+          <svg lucideTrash2 aria-hidden="true"></svg>
+          <span>{{ isDeletingTask ? 'Deleting' : 'Delete task' }}</span>
+        </button>
+      </div>
+    </section>
+  </div>
 </section>

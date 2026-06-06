@@ -17,10 +17,19 @@ export interface TaskFormPayload {
 export class TaskService {
   private readonly http = inject(HttpClient);
 
-  list(status?: TaskStatus): Observable<Task[]> {
-    const params = status ? new HttpParams().set('status', status) : undefined;
+  list(status?: TaskStatus, search?: string): Observable<Task[]> {
+    let params = new HttpParams();
+
+    if (status) {
+      params = params.set('status', status);
+    }
+
+    if (search) {
+      params = params.set('search', search);
+    }
+
     return this.http
-      .get<TaskListResponse>(`${environment.apiUrl}/tasks`, { params })
+      .get<TaskListResponse>(`${environment.apiUrl}/tasks`, { params: params.keys().length ? params : undefined })
       .pipe(map((response) => (Array.isArray(response) ? response : response.data)));
   }
 
@@ -32,7 +41,7 @@ export class TaskService {
     return this.http.patch<ApiResponse<Task>>(`${environment.apiUrl}/tasks/${id}`, payload);
   }
 
-  delete(id: string): Observable<ApiResponse<{ id: string }>> {
-    return this.http.delete<ApiResponse<{ id: string }>>(`${environment.apiUrl}/tasks/${id}`);
+  delete(id: string): Observable<ApiResponse<{ id: string; isDeleted: boolean }>> {
+    return this.http.delete<ApiResponse<{ id: string; isDeleted: boolean }>>(`${environment.apiUrl}/tasks/${id}`);
   }
 }

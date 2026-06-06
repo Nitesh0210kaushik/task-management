@@ -1,11 +1,13 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
-import { TaskRealtimePayload } from './models';
+import { Notification, TaskRealtimePayload } from './models';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class SocketService {
+  private readonly auth = inject(AuthService);
   private socket: Socket | null = null;
 
   connect(): void {
@@ -13,7 +15,11 @@ export class SocketService {
       return;
     }
 
+    this.socket?.disconnect();
     this.socket = io(environment.socketUrl, {
+      auth: {
+        token: this.auth.token
+      },
       withCredentials: true,
       transports: ['websocket']
     });
@@ -36,6 +42,22 @@ export class SocketService {
         this.socket?.off('task:created', handler);
         this.socket?.off('task:updated', handler);
         this.socket?.off('task:deleted', handler);
+      };
+    });
+  }
+
+  onNotifications(): Observable<Notification> {
+    return new Observable((subscriber) => {
+      if (!this.socket) {
+        subscriber.complete();
+        return;
+      }
+
+      const handler = (payload: Notification) => subscriber.next(payload);
+      this.socket.on('notification:new', handler);
+
+      return () => {
+        this.socket?.off('notification:new', handler);
       };
     });
   }

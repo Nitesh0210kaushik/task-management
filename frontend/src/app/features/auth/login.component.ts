@@ -2,14 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LucideArrowRight, LucideLock, LucideLogIn, LucideMail } from '@lucide/angular';
+import { LucideLock, LucideLogIn, LucideMail } from '@lucide/angular';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideArrowRight, LucideLock, LucideLogIn, LucideMail],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideLock, LucideLogIn, LucideMail],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })

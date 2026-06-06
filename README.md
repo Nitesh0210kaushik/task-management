@@ -1,68 +1,89 @@
 # Task Management Application
 
-MEAN stack task management app with JWT auth, role-based access, task CRUD, Angular UI, and Socket.IO realtime updates.
+MEAN stack task management app with JWT authentication, role-based access, task CRUD, Angular UI, and Socket.IO realtime updates.
 
-## Tech Stack
-
-- MongoDB, Express, Node.js, TypeScript
-- Angular standalone components
-- JWT authentication with httpOnly cookies
-- Socket.IO realtime task notifications
-
-## Prerequisites
+## Requirements
 
 - Node.js 20+
-- MongoDB running locally
+- MongoDB local or MongoDB Atlas
 
-## Setup
+## Setup And Run
 
-Install dependencies:
+### 1. Install Dependencies
 
 ```bash
 npm run install:all
 ```
 
-Create backend environment file:
+### 2. Create Backend Env File
+
+Windows PowerShell:
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+```
+
+macOS/Linux:
 
 ```bash
 cp backend/.env.example backend/.env
 ```
 
-Update `backend/.env` if needed. Do not commit real `.env` files.
+The default values work for local setup. Do not commit `backend/.env`.
 
-Seed demo users:
+For deployment, set the backend environment variables on the hosting platform using `backend/.env.production.example` and use a MongoDB Atlas `MONGODB_URI`.
+Set `NODE_ENV=production` in deployment. In production, the backend requires a MongoDB Atlas `mongodb+srv://` URI.
+
+### 3. Seed Demo Data
+
+Make sure MongoDB is running, then run:
 
 ```bash
 npm run seed
 ```
 
-## Run
+### 4. Start Backend
 
-Backend:
+Open one terminal:
 
 ```bash
 npm run dev:backend
 ```
 
-Frontend:
+Backend runs on `http://localhost:5000`.
+
+### 5. Start Frontend
+
+Open another terminal:
 
 ```bash
 npm run dev:frontend
 ```
 
-Open `http://localhost:4200`.
+Frontend runs on `http://localhost:4200`.
 
-## Demo Users
+## Demo Login
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Manager | manager@example.com | Password@123 |
-| Team Lead | lead@example.com | Password@123 |
-| Employee | employee@example.com | Password@123 |
+| Manager | manager@eminence.com | Password@123 |
+| Team Lead | lead@eminence.com | Password@123 |
+| Employee | employee@eminence.com | Password@123 |
+
+## Useful Commands
+
+```bash
+npm run build
+npm run test:backend
+npm run seed
+```
+
+Backend tests use `TEST_MONGODB_URI` when it is set. If it is not set, tests derive a `_test` database from `MONGODB_URI`.
 
 ## Notes
 
 - Public signup creates Employee accounts only.
-- Manager accounts are seeded; Managers can create Team Leads and assign Employees to Team Leads.
-- Angular does not use private `.env` files here. `frontend/src/environments/environment.ts` contains only public API/socket URLs and must not contain secrets.
-- Build check: `npm run build`
+- Manager can create Team Leads and view Employees; task assignment happens from the task form.
+- Angular environment files contain only public API/socket URLs. Secrets stay only in backend `.env`.
+- Local development uses localhost MongoDB; production must use a hosted MongoDB URI.
+- Frontend production build uses the deployed site origin for `/api` and Socket.IO. For separate frontend/backend domains, update `frontend/src/environments/environment.prod.ts` before building.

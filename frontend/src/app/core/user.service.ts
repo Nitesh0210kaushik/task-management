@@ -27,9 +27,4 @@ export class UserService {
     return this.http.post<ApiResponse<User>>(`${environment.apiUrl}/users`, payload);
   }
 
-  assignTeamLead(employeeId: string, teamLeadId: string | null): Observable<ApiResponse<User>> {
-    return this.http.patch<ApiResponse<User>>(`${environment.apiUrl}/users/${employeeId}/team-lead`, {
-      teamLeadId
-    });
-  }
 }

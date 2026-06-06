@@ -12,13 +12,17 @@
   overflow: hidden;
 }
 
+.notification-list.compact .notification-item {
+  grid-template-columns: 12px minmax(0, 1fr);
+}
+
 .notification-list.grid {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
 .notification-item {
   display: grid;
-  grid-template-columns: 12px minmax(0, 1fr);
+  grid-template-columns: 12px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
   border: 1px solid #e5eaf0;
@@ -69,6 +73,41 @@
   font-weight: 800;
 }
 
+.notification-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.notification-actions button {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: #eef4f3;
+  color: #0f766e;
+  cursor: pointer;
+}
+
+.notification-actions button:hover {
+  background: #dcecea;
+}
+
+.notification-actions .danger {
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.notification-actions .danger:hover {
+  background: #fee4e2;
+}
+
+.notification-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .empty-copy {
   color: #647084;
   font-size: 0.9rem;
@@ -78,5 +117,16 @@
 @media (max-width: 860px) {
   .notification-list.grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .notification-item {
+    grid-template-columns: 12px minmax(0, 1fr);
+  }
+
+  .notification-actions {
+    grid-column: 2;
+    justify-content: flex-end;
   }
 }

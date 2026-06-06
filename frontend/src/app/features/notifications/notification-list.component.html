@@ -4,7 +4,29 @@
     <div>
       <strong>{{ notification.title }}</strong>
       <p>{{ notification.message }}</p>
-      <small>{{ formatNotificationTime(notification.createdAt) }}</small>
+      <small>{{ notification.read ? 'Read - ' : '' }}{{ formatNotificationTime(notification.createdAt) }}</small>
+    </div>
+    <div class="notification-actions" *ngIf="showActions">
+      <button
+        type="button"
+        *ngIf="!notification.read"
+        (click)="markReadRequested.emit(notification)"
+        [disabled]="isBusy(notification)"
+        title="Mark as read"
+        aria-label="Mark notification as read"
+      >
+        <svg lucideCheck aria-hidden="true"></svg>
+      </button>
+      <button
+        class="danger"
+        type="button"
+        (click)="deleteRequested.emit(notification)"
+        [disabled]="isBusy(notification)"
+        title="Delete notification"
+        aria-label="Delete notification"
+      >
+        <svg lucideTrash2 aria-hidden="true"></svg>
+      </button>
     </div>
   </article>
 </section>

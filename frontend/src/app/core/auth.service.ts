@@ -14,10 +14,6 @@ export class AuthService {
 
   readonly currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor() {
-    localStorage.removeItem('task-management-token');
-  }
-
   get token(): string | null {
     return this.accessToken;
   }

@@ -1,3 +1,4 @@
+import path from 'path';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import express from 'express';
@@ -48,6 +49,17 @@ export const createApp = () => {
   });
 
   registerApiRoutes(app, authLimiter);
+
+  // Serve frontend built static files
+  const frontendPath = path.join(__dirname, '../../frontend/dist/task-management-frontend/browser');
+  app.use(express.static(frontendPath));
+
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io') || req.path.startsWith('/health')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
 
   app.use(notFoundHandler);
   app.use(errorHandler);

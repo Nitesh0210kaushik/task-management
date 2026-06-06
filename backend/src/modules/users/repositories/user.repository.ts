@@ -24,6 +24,15 @@ export class UserRepository {
     return User.find({ role }).sort({ username: 1 }).exec();
   }
 
+  findBySearchTerm(searchTerm: string): Promise<IUser[]> {
+    const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = new RegExp(escapedTerm, 'i');
+
+    return User.find({
+      $or: [{ username: searchRegex }, { email: searchRegex }]
+    }).exec();
+  }
+
   findTeamMembers(teamLeadId: string | Types.ObjectId): Promise<IUser[]> {
     return User.find({ teamLeadId }).sort({ username: 1 }).exec();
   }

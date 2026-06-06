@@ -13,6 +13,7 @@ import { TaskRepository } from '../repositories/task.repository';
 
 interface DeleteTaskResult {
   id: string;
+  isDeleted: boolean;
 }
 
 export class TaskService {
@@ -21,7 +22,25 @@ export class TaskService {
   private readonly permissionService = new PermissionService();
 
   async listTasks(currentUser: AuthUser, query: TaskQueryDto): Promise<ITask[]> {
-    const visibilityQuery = await this.permissionService.getTaskVisibilityQuery(currentUser);
+    let visibilityQuery = await this.permissionService.getTaskVisibilityQuery(currentUser);
+
+    if (query.search) {
+      const escapedSearch = query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(escapedSearch, 'i');
+      const matchingUsers = await this.userRepository.findBySearchTerm(query.search);
+      const matchingUserIds = matchingUsers.map((user) => user._id);
+      const searchQuery = {
+        $or: [
+          { title: searchRegex },
+          { description: searchRegex },
+          { createdBy: { $in: matchingUserIds } },
+          { assignedTo: { $in: matchingUserIds } }
+        ]
+      };
+
+      visibilityQuery = Object.keys(visibilityQuery).length ? { $and: [visibilityQuery, searchQuery] } : searchQuery;
+    }
+
     return this.taskRepository.findVisible(visibilityQuery, query.status);
   }
 
@@ -47,7 +66,7 @@ export class TaskService {
     });
 
     const populatedTask = await this.taskRepository.populate(task);
-    await emitTaskChange(io, 'task:created', populatedTask);
+    await emitTaskChange(io, 'task:created', populatedTask, currentUser);
 
     return populatedTask;
   }
@@ -89,7 +108,7 @@ export class TaskService {
 
     await task.save();
     const populatedTask = await this.taskRepository.populate(task);
-    await emitTaskChange(io, 'task:updated', populatedTask);
+    await emitTaskChange(io, 'task:updated', populatedTask, currentUser);
 
     return populatedTask;
   }
@@ -105,10 +124,10 @@ export class TaskService {
       throw new ApiError(HTTP_STATUS.FORBIDDEN, 'You cannot delete this task.');
     }
 
+    await this.taskRepository.softDelete(task);
     const populatedTask = await this.taskRepository.populate(task);
-    await task.deleteOne();
-    await emitTaskChange(io, 'task:deleted', populatedTask);
+    await emitTaskChange(io, 'task:deleted', populatedTask, currentUser);
 
-    return { id: taskId };
+    return { id: taskId, isDeleted: true };
   }
 }

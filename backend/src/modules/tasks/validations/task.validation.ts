@@ -1,7 +1,9 @@
 import { z } from 'zod';
-import { TASK_STATUSES } from '../../../constants/task-status';
+import { LEGACY_TASK_STATUSES, TASK_STATUSES } from '../../../constants/task-status';
 
-export const taskStatusSchema = z.enum([TASK_STATUSES.BACKLOG, TASK_STATUSES.IN_PROGRESS, TASK_STATUSES.COMPLETED]);
+export const taskStatusSchema = z
+  .enum([TASK_STATUSES.BACKLOG, TASK_STATUSES.IN_PROGRESS, TASK_STATUSES.COMPLETED, LEGACY_TASK_STATUSES.PENDING])
+  .transform((status) => (status === LEGACY_TASK_STATUSES.PENDING ? TASK_STATUSES.BACKLOG : status));
 
 export const createTaskSchema = z.object({
   title: z.string().trim().min(2).max(120),
@@ -22,5 +24,9 @@ export const updateTaskSchema = z
   });
 
 export const taskQuerySchema = z.object({
-  status: taskStatusSchema.optional()
+  status: taskStatusSchema.optional(),
+  search: z.preprocess(
+    (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
+    z.string().trim().min(3).max(80).optional()
+  )
 });

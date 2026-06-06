@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LucideArrowRight, LucideLock, LucideMail, LucideUser, LucideUserPlus } from '@lucide/angular';
+import { LucideLock, LucideMail, LucideUser, LucideUserPlus } from '@lucide/angular';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 
@@ -13,7 +13,6 @@ import { ToastService } from '../../core/toast.service';
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
-    LucideArrowRight,
     LucideLock,
     LucideMail,
     LucideUser,
@@ -30,11 +29,28 @@ export class RegisterComponent {
 
   isSubmitting = false;
 
-  form = this.fb.nonNullable.group({
-    username: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]]
-  });
+  private readonly passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+    const password = control.get('password')?.value;
+    const confirmPassword = control.get('confirmPassword')?.value;
+
+    if (!password || !confirmPassword) {
+      return null;
+    }
+
+    return password === confirmPassword ? null : { passwordMismatch: true };
+  };
+
+  form = this.fb.nonNullable.group(
+    {
+      username: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', [Validators.required]]
+    },
+    {
+      validators: this.passwordMatchValidator
+    }
+  );
 
   submit(): void {
     if (this.form.invalid) {
@@ -44,8 +60,14 @@ export class RegisterComponent {
     }
 
     this.isSubmitting = true;
+    const rawValue = this.form.getRawValue();
+    const registerPayload = {
+      username: rawValue.username,
+      email: rawValue.email,
+      password: rawValue.password
+    };
 
-    this.auth.register(this.form.getRawValue()).subscribe({
+    this.auth.register(registerPayload).subscribe({
       next: () => {
         this.toast.success('Your workspace account is ready.', 'Account created');
         void this.router.navigate(['/dashboard']);

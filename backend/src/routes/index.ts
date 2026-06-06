@@ -1,6 +1,7 @@
 import type { Express, RequestHandler } from 'express';
 import { registerAuthRoutes } from './auth.routes';
 import { registerDashboardRoutes } from './dashboard.routes';
+import { registerNotificationRoutes } from './notification.routes';
 import { registerTaskRoutes } from './task.routes';
 import { registerUserRoutes } from './user.routes';
 
@@ -9,4 +10,5 @@ export const registerApiRoutes = (app: Express, authLimiter: RequestHandler): vo
   registerUserRoutes(app);
   registerTaskRoutes(app);
   registerDashboardRoutes(app);
+  registerNotificationRoutes(app);
 };

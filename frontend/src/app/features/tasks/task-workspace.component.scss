@@ -396,6 +396,166 @@
   color: #b42318;
 }
 
+.delete-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 980;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+.delete-modal {
+  position: relative;
+  width: min(520px, 100%);
+  overflow: hidden;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 28px 24px 22px;
+  background: #ffffff;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.24);
+}
+
+.delete-modal-head {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 1;
+}
+
+.delete-modal-head button {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #526070;
+}
+
+.delete-modal-head button:hover {
+  background: #eef2f6;
+  color: #172033;
+}
+
+.delete-modal-copy {
+  margin: 0 0 22px;
+  padding-right: 52px;
+}
+
+.delete-modal-copy h2 {
+  margin: 0 0 10px;
+  color: #111827;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.delete-modal-copy p {
+  margin: 0;
+  color: #526070;
+  line-height: 1.45;
+  max-width: 430px;
+}
+
+.delete-modal-copy p strong {
+  color: #111827;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.delete-modal-copy dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 0;
+}
+
+.delete-modal-copy dl div {
+  min-width: 0;
+  border: 1px solid #eef2f6;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fbfcfe;
+}
+
+.delete-modal-copy dt {
+  color: #647084;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.delete-modal-copy dd {
+  margin: 4px 0 0;
+  color: #111827;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #eef2f6;
+  padding-top: 16px;
+}
+
+.ghost-button,
+.delete-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border-radius: 8px;
+  padding: 0 18px;
+  font-weight: 900;
+}
+
+.ghost-button {
+  min-width: 96px;
+}
+
+.delete-button {
+  min-width: 160px;
+}
+
+.ghost-button {
+  border: 1px solid #d8dee8;
+  background: #ffffff;
+  color: #172033;
+}
+
+.ghost-button:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.delete-button {
+  border: 0;
+  background: #b42318;
+  color: #ffffff;
+}
+
+.delete-button:hover {
+  background: #991b1b;
+}
+
+.delete-button:disabled,
+.ghost-button:disabled {
+  cursor: not-allowed;
+}
+
 .empty-table {
   min-width: 760px;
   display: grid;
@@ -443,5 +603,89 @@ svg {
 
   .kanban-column {
     min-height: 360px;
+  }
+}
+
+@media (max-width: 560px) {
+  :host {
+    margin-inline: 14px;
+  }
+
+  .task-workspace {
+    gap: 14px;
+  }
+
+  .toolbar {
+    gap: 10px;
+  }
+
+  .view-switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .view-switcher button {
+    min-height: 44px;
+    padding-inline: 10px;
+  }
+
+  .kanban-column {
+    min-height: 280px;
+  }
+
+  .kanban-column header {
+    padding: 14px;
+  }
+
+  .kanban-list {
+    padding: 12px;
+  }
+
+  .kanban-card {
+    min-height: 196px;
+    padding: 14px;
+  }
+
+  .kanban-meta,
+  .kanban-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .task-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .empty-table {
+    min-width: 0;
+  }
+
+  .delete-modal-backdrop {
+    align-items: end;
+    padding: 14px;
+  }
+
+  .delete-modal {
+    padding: 24px 18px 18px;
+  }
+
+  .delete-modal-copy {
+    padding-right: 42px;
+  }
+
+  .delete-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .delete-modal-copy dl {
+    grid-template-columns: 1fr;
+  }
+
+  .ghost-button,
+  .delete-button {
+    width: 100%;
   }
 }

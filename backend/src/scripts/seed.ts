@@ -10,22 +10,22 @@ const seed = async (): Promise<void> => {
   await User.deleteMany({});
 
   const manager = await User.create({
-    username: 'Demo Manager',
-    email: 'manager@example.com',
+    username: 'Eminence Manager',
+    email: 'manager@eminence.com',
     password: 'Password@123',
     role: 'manager'
   });
 
   const lead = await User.create({
-    username: 'Demo Team Lead',
-    email: 'lead@example.com',
+    username: 'Eminence Team Lead',
+    email: 'lead@eminence.com',
     password: 'Password@123',
     role: 'teamLead'
   });
 
   const employee = await User.create({
-    username: 'Demo Employee',
-    email: 'employee@example.com',
+    username: 'Eminence Employee',
+    email: 'employee@eminence.com',
     password: 'Password@123',
     role: 'employee',
     teamLeadId: lead._id
@@ -56,9 +56,9 @@ const seed = async (): Promise<void> => {
   ]);
 
   console.log('Seed completed.');
-  console.log('Manager: manager@example.com / Password@123');
-  console.log('Team Lead: lead@example.com / Password@123');
-  console.log('Employee: employee@example.com / Password@123');
+  console.log('Manager: manager@eminence.com / Password@123');
+  console.log('Team Lead: lead@eminence.com / Password@123');
+  console.log('Employee: employee@eminence.com / Password@123');
   process.exit(0);
 };
 

@@ -16,12 +16,12 @@ const durationUnits = {
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(5000),
-  MONGODB_URI: z.string().min(1).default('mongodb://localhost:27017/task_management_mean'),
+  MONGODB_URI: z.string().min(1),
   ACCESS_TOKEN_SECRET: z.string().optional(),
   REFRESH_TOKEN_SECRET: z.string().optional(),
   ACCESS_TOKEN_EXPIRES_IN: z.string().regex(durationPattern).default('15m'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().regex(durationPattern).default('7d'),
-  CLIENT_URL: z.string().url().default('http://localhost:4200')
+  CLIENT_URL: z.string().url()
 });
 
 const parsedEnv = envSchema.parse(process.env);
@@ -65,6 +65,10 @@ const refreshTokenSecret = requiredSecret(
 
 if (isProduction && accessTokenSecret === refreshTokenSecret) {
   throw new Error('ACCESS_TOKEN_SECRET and REFRESH_TOKEN_SECRET must be different in production.');
+}
+
+if (isProduction && !parsedEnv.MONGODB_URI.startsWith('mongodb+srv://')) {
+  throw new Error('MONGODB_URI must use a MongoDB Atlas SRV connection in production.');
 }
 
 export const env = {

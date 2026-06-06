@@ -38,7 +38,6 @@ export class NotificationNavItemComponent implements OnDestroy {
   }
 
   openNotificationsPage(): void {
-    this.notificationService.markAllRead();
     void this.router.navigate(['/notifications']);
   }
 }

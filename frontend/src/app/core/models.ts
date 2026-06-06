@@ -18,6 +18,8 @@ export interface Task {
   status: TaskStatus;
   createdBy: User;
   assignedTo: User;
+  isDeleted?: boolean;
+  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,10 +50,29 @@ export interface Session {
   expiresAt: string;
 }
 
+export type TaskRealtimeEvent = 'task:created' | 'task:updated' | 'task:deleted';
+
 export interface TaskRealtimePayload {
-  event: 'task:created' | 'task:updated' | 'task:deleted';
+  event: TaskRealtimeEvent;
   taskId: string;
   task: Task;
+}
+
+export interface Notification {
+  id: string;
+  recipient: string;
+  actor?: string | null;
+  event: TaskRealtimeEvent;
+  taskId: string;
+  title: string;
+  message: string;
+  status: TaskStatus;
+  read: boolean;
+  readAt?: string | null;
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface DashboardStats {

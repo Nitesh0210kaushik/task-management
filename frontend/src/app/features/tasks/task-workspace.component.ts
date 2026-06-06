@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Subject, debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs';
 import {
   LucideCheckCircle2,
   LucideGripVertical,
@@ -9,7 +10,8 @@ import {
   LucideListTodo,
   LucidePencil,
   LucideSearch,
-  LucideTrash2
+  LucideTrash2,
+  LucideX
 } from '@lucide/angular';
 import { Task, TaskStatus } from '../../core/models';
 import { TaskService } from '../../core/task.service';
@@ -31,15 +33,19 @@ type TaskViewMode = 'kanban' | 'list';
     LucideListTodo,
     LucidePencil,
     LucideSearch,
-    LucideTrash2
+    LucideTrash2,
+    LucideX
   ],
   templateUrl: './task-workspace.component.html',
   styleUrl: './task-workspace.component.scss'
 })
-export class TaskWorkspaceComponent {
+export class TaskWorkspaceComponent implements OnDestroy {
   private readonly taskService = inject(TaskService);
   private readonly toast = inject(ToastService);
   private localTasks: Task[] = [];
+  private readonly searchTermChanges = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
+  private lastAppliedSearch: string | null = null;
 
   @Input() isLoading = false;
 
@@ -54,26 +60,42 @@ export class TaskWorkspaceComponent {
 
   @Output() editRequested = new EventEmitter<Task>();
   @Output() taskChanged = new EventEmitter<void>();
+  @Output() statusFilterChanged = new EventEmitter<TaskStatus | null>();
+  @Output() searchChanged = new EventEmitter<string | null>();
 
   filter: TaskFilter = 'all';
   taskView: TaskViewMode = 'kanban';
-  searchTerm = '';
+  searchInput = '';
   draggedTaskId: string | null = null;
   dragTargetStatus: TaskStatus | null = null;
+  taskPendingDelete: Task | null = null;
+  isDeletingTask = false;
+
+  constructor() {
+    this.searchTermChanges
+      .pipe(
+        debounceTime(500),
+        map((value) => {
+          const normalizedSearch = value.trim();
+          return normalizedSearch.length >= 3 ? normalizedSearch : null;
+        }),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((normalizedSearch) => {
+        if (normalizedSearch === null && this.lastAppliedSearch === null) {
+          return;
+        }
+
+        this.lastAppliedSearch = normalizedSearch;
+        this.searchChanged.emit(normalizedSearch);
+      });
+  }
 
   get displayedTasks(): Task[] {
-    const normalizedSearch = this.searchTerm.trim().toLowerCase();
-
     return this.tasks.filter((task) => {
       const matchesStatus = this.filter === 'all' || this.normalizedStatus(task) === this.filter;
-      const matchesSearch =
-        !normalizedSearch ||
-        task.title.toLowerCase().includes(normalizedSearch) ||
-        task.description.toLowerCase().includes(normalizedSearch) ||
-        task.createdBy.username.toLowerCase().includes(normalizedSearch) ||
-        task.assignedTo.username.toLowerCase().includes(normalizedSearch);
-
-      return matchesStatus && matchesSearch;
+      return matchesStatus;
     });
   }
 
@@ -91,6 +113,22 @@ export class TaskWorkspaceComponent {
 
   setTaskView(view: TaskViewMode): void {
     this.taskView = view;
+  }
+
+  changeSearchTerm(value: string): void {
+    this.searchInput = value;
+    this.searchTermChanges.next(value);
+  }
+
+  changeFilter(filter: TaskFilter): void {
+    this.filter = filter;
+    this.statusFilterChanged.emit(filter === 'all' ? null : filter);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.searchTermChanges.complete();
   }
 
   requestEdit(task: Task): void {
@@ -174,19 +212,36 @@ export class TaskWorkspaceComponent {
   }
 
   deleteTask(task: Task): void {
-    const confirmed = window.confirm(`Delete task "${task.title}"?`);
+    this.taskPendingDelete = task;
+  }
 
-    if (!confirmed) {
+  closeDeleteConfirmation(): void {
+    if (this.isDeletingTask) {
       return;
     }
+
+    this.taskPendingDelete = null;
+  }
+
+  confirmDeleteTask(): void {
+    const task = this.taskPendingDelete;
+
+    if (!task || this.isDeletingTask) {
+      return;
+    }
+
+    this.isDeletingTask = true;
 
     this.taskService.delete(task.id).subscribe({
       next: () => {
         this.localTasks = this.localTasks.filter((item) => item.id !== task.id);
+        this.taskPendingDelete = null;
+        this.isDeletingTask = false;
         this.taskChanged.emit();
-        this.toast.success('Task deleted successfully.', 'Deleted');
+        this.toast.success(`"${task.title}" was removed from active tasks.`, 'Task deleted');
       },
       error: (error) => {
+        this.isDeletingTask = false;
         this.toast.fromError(error, 'Unable to delete task.');
       }
     });

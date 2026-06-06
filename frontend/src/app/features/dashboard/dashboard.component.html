@@ -1,8 +1,19 @@
-<main class="workspace-shell">
+<main class="workspace-shell" [class.sidebar-open]="isMobileSidebarOpen">
+  <button
+    class="sidebar-backdrop"
+    type="button"
+    aria-label="Close navigation"
+    *ngIf="isMobileSidebarOpen"
+    (click)="closeMobileSidebar()"
+  ></button>
+
   <aside class="sidebar">
     <div class="brand">
       <span class="brand-mark">E</span>
       <strong>Eminence Tasks</strong>
+      <button class="sidebar-close" type="button" (click)="closeMobileSidebar()" title="Close navigation" aria-label="Close navigation">
+        <svg lucideX aria-hidden="true"></svg>
+      </button>
     </div>
 
     <div class="workspace-card" *ngIf="currentUser">
@@ -26,7 +37,7 @@
         <svg lucideUsers aria-hidden="true"></svg>
         <span>Team</span>
       </a>
-      <app-notification-nav-item [active]="isNotificationsPage"></app-notification-nav-item>
+      <app-notification-nav-item [active]="isNotificationsPage" (click)="closeMobileSidebar()"></app-notification-nav-item>
     </nav>
 
     <button class="logout-link" type="button" (click)="logout()">
@@ -37,6 +48,10 @@
 
   <section class="content-shell">
     <header class="content-topbar">
+      <button class="mobile-menu-button" type="button" (click)="openMobileSidebar()" title="Open navigation" aria-label="Open navigation">
+        <svg lucideMenu aria-hidden="true"></svg>
+      </button>
+
       <div class="breadcrumb">
         <span>/</span>
         <strong>{{ pageCrumb }}</strong>
@@ -284,6 +299,8 @@
       [isLoading]="isLoadingTasks"
       (editRequested)="editTask($event)"
       (taskChanged)="handleTaskChanged()"
+      (statusFilterChanged)="handleTaskStatusFilterChanged($event)"
+      (searchChanged)="handleTaskSearchChanged($event)"
     ></app-task-workspace>
 
     <section class="team-panel" *ngIf="canViewUsers && isTeamPage">
@@ -330,7 +347,7 @@
       <section class="team-section">
         <div class="team-section-head">
           <div>
-            <span>{{ currentUser?.role === 'manager' ? 'Assignment' : 'Members' }}</span>
+            <span>{{ currentUser?.role === 'manager' ? 'People' : 'Members' }}</span>
             <h3>{{ currentUser?.role === 'manager' ? 'Employees' : 'Team members' }}</h3>
           </div>
           <strong>{{ employeeUsers.length }}</strong>
@@ -344,14 +361,6 @@
               <small>{{ user.email }}</small>
               <em>{{ roleLabel(user.role) }}</em>
             </div>
-
-            <label *ngIf="currentUser?.role === 'manager'">
-              <small>Reports to</small>
-              <select [ngModel]="user.teamLeadId || ''" (ngModelChange)="assignLead(user, $event)">
-                <option value="">Unassigned</option>
-                <option *ngFor="let lead of teamLeads" [value]="lead.id">{{ lead.username }}</option>
-              </select>
-            </label>
           </article>
         </div>
 

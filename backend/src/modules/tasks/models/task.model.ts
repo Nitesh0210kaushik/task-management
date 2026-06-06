@@ -7,6 +7,8 @@ export interface ITask extends Document {
   status: TaskStatus;
   createdBy: Types.ObjectId;
   assignedTo: Types.ObjectId;
+  isDeleted: boolean;
+  deletedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +44,14 @@ const taskSchema = new Schema<ITask>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false
+    },
+    deletedAt: {
+      type: Date,
+      default: null
     }
   },
   {
@@ -62,5 +72,6 @@ const taskSchema = new Schema<ITask>(
 taskSchema.index({ createdBy: 1 });
 taskSchema.index({ assignedTo: 1 });
 taskSchema.index({ status: 1 });
+taskSchema.index({ isDeleted: 1, updatedAt: -1 });
 
 export const Task = model<ITask>('Task', taskSchema);

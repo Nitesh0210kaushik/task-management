@@ -8,11 +8,14 @@ const taskPopulatePaths: PopulateOptions[] = [
   { path: 'assignedTo', select: 'username email role teamLeadId' }
 ];
 
+const activeTaskFilter = { isDeleted: { $ne: true } };
+
 export class TaskRepository {
   findVisible(filter: FilterQuery<ITask>, status?: TaskStatus): Promise<ITask[]> {
     return Task.find({
       ...filter,
-      ...(status ? { status } : {})
+      ...(status ? { status } : {}),
+      ...activeTaskFilter
     })
       .populate(taskPopulatePaths)
       .sort({ updatedAt: -1 })
@@ -20,7 +23,7 @@ export class TaskRepository {
   }
 
   findById(taskId: string): Promise<ITask | null> {
-    return Task.findById(taskId).exec();
+    return Task.findOne({ _id: taskId, ...activeTaskFilter }).exec();
   }
 
   create(payload: CreateTaskDto & { createdBy: string; assignedTo: string }): Promise<ITask> {
@@ -30,5 +33,10 @@ export class TaskRepository {
   populate(task: ITask): Promise<ITask> {
     return task.populate(taskPopulatePaths);
   }
-}
 
+  async softDelete(task: ITask): Promise<ITask> {
+    task.isDeleted = true;
+    task.deletedAt = new Date();
+    return task.save();
+  }
+}

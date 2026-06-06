@@ -16,5 +16,5 @@ export interface UpdateTaskDto {
 
 export interface TaskQueryDto {
   status?: TaskStatus;
+  search?: string;
 }
-

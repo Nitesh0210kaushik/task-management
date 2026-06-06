@@ -3,14 +3,79 @@
     <div>
       <span>Realtime</span>
       <h2>Workspace activity</h2>
+      <em *ngIf="unreadNotificationCount">{{ unreadNotificationCount }} unread</em>
     </div>
-    <button type="button" (click)="markNotificationsRead()" [disabled]="!unreadNotificationCount">Mark read</button>
+    <button type="button" (click)="markNotificationsRead()" [disabled]="!unreadNotificationCount || isMarkingRead">
+      {{ isMarkingRead ? 'Marking read' : 'Mark all read' }}
+    </button>
   </div>
 
   <app-notification-list
     class="page-list"
     [notifications]="notifications"
     variant="grid"
+    [showActions]="true"
+    [busyNotificationIds]="busyNotificationIds"
+    (markReadRequested)="markNotificationRead($event)"
+    (deleteRequested)="requestDeleteNotification($event)"
     emptyText="No notifications yet."
   ></app-notification-list>
+
+  <div class="delete-modal-backdrop" *ngIf="notificationPendingDelete as notificationToDelete" (click)="closeDeleteConfirmation()">
+    <section
+      class="delete-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-notification-title"
+      (click)="$event.stopPropagation()"
+      (keydown.escape)="closeDeleteConfirmation()"
+    >
+      <div class="delete-modal-head">
+        <button
+          type="button"
+          (click)="closeDeleteConfirmation()"
+          [disabled]="isDeletingNotification(notificationToDelete)"
+          title="Close"
+          aria-label="Close notification delete confirmation"
+        >
+          <svg lucideX aria-hidden="true"></svg>
+        </button>
+      </div>
+
+      <div class="delete-modal-copy">
+        <h2 id="delete-notification-title">Delete notification?</h2>
+        <p>Are you sure you want to delete <strong>{{ notificationToDelete.title }}</strong>? This notification will be removed from your activity feed.</p>
+        <dl>
+          <div>
+            <dt>Event</dt>
+            <dd>{{ notificationEventLabel(notificationToDelete) }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ notificationToDelete.read ? 'Read' : 'Unread' }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="delete-modal-actions">
+        <button
+          class="ghost-button"
+          type="button"
+          (click)="closeDeleteConfirmation()"
+          [disabled]="isDeletingNotification(notificationToDelete)"
+        >
+          Cancel
+        </button>
+        <button
+          class="delete-button"
+          type="button"
+          (click)="confirmDeleteNotification()"
+          [disabled]="isDeletingNotification(notificationToDelete)"
+        >
+          <svg lucideTrash2 aria-hidden="true"></svg>
+          <span>{{ isDeletingNotification(notificationToDelete) ? 'Deleting' : 'Delete notification' }}</span>
+        </button>
+      </div>
+    </section>
+  </div>
 </section>

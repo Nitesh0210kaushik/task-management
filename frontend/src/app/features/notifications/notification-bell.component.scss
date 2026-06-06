@@ -120,12 +120,16 @@ svg {
 
 @media (max-width: 860px) {
   .notification-menu {
-    left: 0;
-    right: auto;
+    position: fixed;
+    top: 74px;
+    right: 14px;
+    left: 14px;
+    width: auto;
+    max-height: calc(100dvh - 92px);
+    overflow: auto;
   }
 
   .notification-menu::before {
-    left: 18px;
-    right: auto;
+    right: 88px;
   }
 }

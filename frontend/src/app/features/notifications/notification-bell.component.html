@@ -5,13 +5,13 @@
     title="Notifications"
     aria-label="Notifications"
     [attr.aria-expanded]="isMenuOpen"
-    (click)="toggleMenu()"
+    (click)="toggleMenu($event)"
   >
     <svg lucideBell aria-hidden="true"></svg>
     <span *ngIf="unreadNotificationCount">{{ unreadNotificationCount > 9 ? '9+' : unreadNotificationCount }}</span>
   </button>
 
-  <section class="notification-menu" *ngIf="isMenuOpen" aria-label="Recent notifications">
+  <section class="notification-menu" *ngIf="isMenuOpen" aria-label="Recent notifications" (click)="$event.stopPropagation()">
     <div class="notification-menu-head">
       <div>
         <span>Live updates</span>

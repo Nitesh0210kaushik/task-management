@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import {
@@ -9,6 +9,7 @@ import {
   LucideListFilter,
   LucideListTodo,
   LucideLogOut,
+  LucideMenu,
   LucidePlus,
   LucideRefreshCw,
   LucideUsers,
@@ -67,6 +68,7 @@ const EMPTY_DASHBOARD_STATS: DashboardStats = {
     LucideListFilter,
     LucideListTodo,
     LucideLogOut,
+    LucideMenu,
     LucidePlus,
     LucideRefreshCw,
     LucideUsers,
@@ -99,8 +101,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   isLoadingDashboard = false;
   isLoadingTasks = false;
   isLoadingUsers = false;
+  isMobileSidebarOpen = false;
+  taskStatusFilter: TaskStatus | null = null;
+  taskSearchTerm: string | null = null;
 
   private socketSubscription?: Subscription;
+  private notificationSocketSubscription?: Subscription;
   private routerSubscription?: Subscription;
   private dashboardRequestSubscription?: Subscription;
   private tasksRequestSubscription?: Subscription;
@@ -224,7 +230,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     if (this.isTeamPage) {
-      return this.currentUser?.role === 'manager' ? 'Team leads, employees, and reporting structure' : 'Team members and assigned work ownership';
+      return this.currentUser?.role === 'manager' ? 'Team leads and employees in this workspace' : 'Team members and assigned work ownership';
     }
 
     if (this.isTasksPage) {
@@ -274,6 +280,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
         this.activeSection = this.sectionFromUrl(event.urlAfterRedirects);
+        this.closeMobileSidebar();
         this.enforceSectionAccess();
         this.refreshActiveSection();
       });
@@ -297,6 +304,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.routerSubscription?.unsubscribe();
     this.socketSubscription?.unsubscribe();
+    this.notificationSocketSubscription?.unsubscribe();
     this.dashboardRequestSubscription?.unsubscribe();
     this.tasksRequestSubscription?.unsubscribe();
     this.usersRequestSubscription?.unsubscribe();
@@ -310,8 +318,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.socketService.connect();
     this.socketSubscription = this.socketService.onTaskChanges().subscribe((payload) => {
-      this.notificationService.addTaskNotification(payload);
-
       if (this.isDashboardPage) {
         this.loadDashboardOverview();
       }
@@ -319,6 +325,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (this.isTasksPage) {
         this.loadTasks();
       }
+    });
+
+    this.notificationSocketSubscription = this.socketService.onNotifications().subscribe((notification) => {
+      this.notificationService.addRealtimeNotification(notification);
     });
   }
 
@@ -337,7 +347,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   prefetchSection(section: WorkspaceSection): void {
     this.activeSection = section;
+    this.closeMobileSidebar();
     this.refreshSectionData(section);
+  }
+
+  openMobileSidebar(): void {
+    this.isMobileSidebarOpen = true;
+  }
+
+  closeMobileSidebar(): void {
+    this.isMobileSidebarOpen = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  handleEscapeKey(): void {
+    this.closeMobileSidebar();
   }
 
   private refreshSectionData(section: WorkspaceSection): void {
@@ -431,12 +455,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     };
   }
 
-  loadTasks(): void {
+  loadTasks(status: TaskStatus | null = this.taskStatusFilter, search: string | null = this.taskSearchTerm): void {
+    this.taskStatusFilter = status;
+    this.taskSearchTerm = search;
     this.tasksRequestSubscription?.unsubscribe();
     this.isLoadingTasks = true;
 
     this.tasksRequestSubscription = this.taskService
-      .list()
+      .list(status ?? undefined, search ?? undefined)
       .pipe(
         finalize(() => {
           this.isLoadingTasks = false;
@@ -511,6 +537,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.refreshTaskDataAfterMutation();
   }
 
+  handleTaskStatusFilterChanged = (status: TaskStatus | null): void => {
+    this.loadTasks(status, this.taskSearchTerm);
+  };
+
+  handleTaskSearchChanged = (search: string | null): void => {
+    this.loadTasks(this.taskStatusFilter, search);
+  };
+
   openMemberComposer(): void {
     this.resetMemberForm();
     this.isMemberComposerOpen = true;
@@ -548,21 +582,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.toast.fromError(error, 'Unable to create team lead.');
         this.isCreatingMember = false;
-      }
-    });
-  }
-
-  assignLead(user: User, teamLeadId: string): void {
-    this.userService.assignTeamLead(user.id, teamLeadId || null).subscribe({
-      next: () => {
-        this.loadUsers();
-        if (this.isDashboardPage) {
-          this.loadDashboardOverview();
-        }
-        this.toast.success('Team lead assignment updated.', 'Updated');
-      },
-      error: (error) => {
-        this.toast.fromError(error, 'Unable to update team lead.');
       }
     });
   }
@@ -655,6 +674,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
+    this.closeMobileSidebar();
     this.socketService.disconnect();
     this.auth.logout();
     void this.router.navigate(['/login']);

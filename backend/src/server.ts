@@ -22,7 +22,7 @@ const startServer = async (): Promise<void> => {
   app.set('io', io);
 
   server.listen(env.port, () => {
-    logger.info(`API running on http://localhost:${env.port}`);
+    logger.info(`API running on port ${env.port}`);
   });
 };
 

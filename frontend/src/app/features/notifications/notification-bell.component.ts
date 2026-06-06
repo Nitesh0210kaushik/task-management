@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnDestroy, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy, inject } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
 import { LucideBell } from '@lucide/angular';
-import { Subscription } from 'rxjs';
+import { Subscription, filter } from 'rxjs';
 import { NotificationService, RealtimeNotification } from '../../core/notification.service';
 import { NotificationListComponent } from './notification-list.component';
 
@@ -17,7 +17,9 @@ export class NotificationBellComponent implements OnDestroy {
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly notificationSubscription: Subscription;
+  private readonly routeSubscription: Subscription;
 
   notifications: RealtimeNotification[] = [];
   isMenuOpen = false;
@@ -27,6 +29,12 @@ export class NotificationBellComponent implements OnDestroy {
       this.notifications = notifications;
       this.cdr.markForCheck();
     });
+
+    this.routeSubscription = this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.closeMenu();
+      });
   }
 
   get topNotifications(): RealtimeNotification[] {
@@ -39,15 +47,41 @@ export class NotificationBellComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.notificationSubscription.unsubscribe();
+    this.routeSubscription.unsubscribe();
   }
 
-  toggleMenu(): void {
+  toggleMenu(event: MouseEvent): void {
+    event.stopPropagation();
     this.isMenuOpen = !this.isMenuOpen;
+
+    if (this.isMenuOpen) {
+      this.notificationService.loadNotifications();
+    }
+  }
+
+  closeMenu(): void {
+    if (!this.isMenuOpen) {
+      return;
+    }
+
+    this.isMenuOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeOnOutsideClick(event: MouseEvent): void {
+    if (!this.host.nativeElement.contains(event.target as Node)) {
+      this.closeMenu();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  closeOnEscape(): void {
+    this.closeMenu();
   }
 
   openNotificationsPage(): void {
-    this.isMenuOpen = false;
-    this.notificationService.markAllRead();
+    this.closeMenu();
     void this.router.navigate(['/notifications']);
   }
 }

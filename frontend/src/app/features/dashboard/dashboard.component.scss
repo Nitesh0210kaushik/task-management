@@ -201,6 +201,30 @@
   gap: 16px;
 }
 
+.mobile-menu-button,
+.sidebar-close,
+.sidebar-backdrop {
+  display: none;
+}
+
+.mobile-menu-button,
+.sidebar-close {
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f766e;
+  cursor: pointer;
+}
+
+.mobile-menu-button:hover,
+.sidebar-close:hover {
+  border-color: #0f766e;
+  background: #eef4f3;
+}
+
 .user-chip > span {
   width: 42px;
   height: 42px;
@@ -773,11 +797,6 @@ textarea:focus {
   font-weight: 850;
 }
 
-.team-card label {
-  grid-column: 1 / -1;
-  margin-top: 4px;
-}
-
 svg {
   width: 18px;
   height: 18px;
@@ -815,26 +834,82 @@ button:disabled {
 
 @media (max-width: 860px) {
   .workspace-shell {
-    grid-template-columns: 1fr;
+    display: block;
   }
 
   .sidebar {
-    position: static;
-    height: auto;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1000;
+    width: min(316px, calc(100vw - 44px));
+    height: 100dvh;
+    overflow-y: auto;
+    box-shadow: 24px 0 58px rgba(15, 23, 42, 0.2);
+    transform: translateX(-105%);
+    transition: transform 0.22s ease;
+  }
+
+  .workspace-shell.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 950;
+    display: block;
+    border: 0;
+    padding: 0;
+    background: rgba(15, 23, 42, 0.44);
+    backdrop-filter: blur(3px);
+  }
+
+  .sidebar-close,
+  .mobile-menu-button {
+    display: grid;
+  }
+
+  .brand {
+    padding-right: 14px;
+  }
+
+  .brand strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-close {
+    margin-left: auto;
   }
 
   .logout-link {
     margin-bottom: 16px;
   }
 
-  .page-heading,
   .content-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    min-height: 64px;
+    align-items: center;
+    flex-direction: row;
+    padding-inline: 16px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  }
+
+  .page-heading {
     align-items: stretch;
     flex-direction: column;
   }
 
   .topbar-actions {
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-left: auto;
   }
 
   .stats-grid,
@@ -862,5 +937,131 @@ button:disabled {
 
   .task-modal {
     max-height: calc(100vh - 28px);
+  }
+}
+
+@media (max-width: 560px) {
+  .content-topbar,
+  .page-heading,
+  .stats-grid,
+  .dashboard-loading,
+  .dashboard-overview,
+  .team-panel {
+    margin-inline: 14px;
+  }
+
+  .content-topbar {
+    margin-inline: 0;
+    padding-inline: 14px;
+  }
+
+  .breadcrumb {
+    min-width: 0;
+    gap: 8px;
+    font-size: 0.92rem;
+  }
+
+  .breadcrumb strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .user-chip {
+    min-width: 0;
+    grid-template-columns: 38px;
+  }
+
+  .user-chip > div {
+    display: none;
+  }
+
+  .user-chip > span {
+    width: 38px;
+    height: 38px;
+  }
+
+  .page-heading {
+    margin-top: 24px;
+    margin-bottom: 18px;
+  }
+
+  .page-heading h1 {
+    font-size: 1.85rem;
+    line-height: 1.08;
+  }
+
+  .page-heading p {
+    font-size: 0.94rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .stat-card {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 10px;
+    min-height: 92px;
+    padding: 14px;
+    align-items: center;
+  }
+
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .stat-card strong {
+    font-size: 1.65rem;
+  }
+
+  .stat-card div span {
+    margin-top: 4px;
+    font-size: 0.86rem;
+    line-height: 1.18;
+  }
+
+  .team-panel {
+    padding: 14px;
+  }
+
+  .team-heading,
+  .team-section-head,
+  .panel-heading {
+    align-items: flex-start;
+  }
+
+  .recent-row {
+    grid-template-columns: 12px minmax(0, 1fr);
+  }
+
+  .recent-row .status-badge {
+    grid-column: 2;
+  }
+
+  .workload-row {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .workload-row em {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 360px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    min-height: 78px;
   }
 }
