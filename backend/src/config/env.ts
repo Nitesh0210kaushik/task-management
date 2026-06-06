@@ -21,7 +21,7 @@ const envSchema = z.object({
   REFRESH_TOKEN_SECRET: z.string().optional(),
   ACCESS_TOKEN_EXPIRES_IN: z.string().regex(durationPattern).default('15m'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().regex(durationPattern).default('7d'),
-  CLIENT_URL: z.string().url()
+  CLIENT_URL: z.string().default('http://localhost:4200')
 });
 
 const parsedEnv = envSchema.parse(process.env);

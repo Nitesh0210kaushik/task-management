@@ -65,16 +65,48 @@ Frontend runs on `http://localhost:4200`.
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Manager | manager@eminence.com | Password@123 |
-| Team Lead | lead@eminence.com | Password@123 |
-| Employee | employee@eminence.com | Password@123 |
+| Manager | manager@example.com | Password@123 |
+| Team Lead | lead@example.com | Password@123 |
+| Employee | employee@example.com | Password@123 |
 
 ## Useful Commands
+
+### Root Monorepo Commands (Recommended)
+
+You can run these commands directly from the root directory without changing folders:
+
+- **Install all dependencies (Root, Backend, Frontend):**
+  ```bash
+  npm run install:all
+  ```
+- **Build both Frontend and Backend:**
+  ```bash
+  npm run build
+  ```
+- **Run Backend in Development Mode:**
+  ```bash
+  npm run dev:backend
+  ```
+- **Run Frontend in Development Mode:**
+  ```bash
+  npm run dev:frontend
+  ```
+- **Run Backend Tests:**
+  ```bash
+  npm run test:backend
+  ```
+- **Seed Database:**
+  ```bash
+  npm run seed
+  ```
+
+### Component-Specific Commands
 
 Backend:
 
 ```bash
 cd backend
+npm install
 npm run build
 npm test
 npm run seed
@@ -84,6 +116,7 @@ Frontend:
 
 ```bash
 cd frontend
+npm install
 npm run build
 ```
 
