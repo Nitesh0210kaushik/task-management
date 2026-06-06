@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LucideLock, LucideMail, LucideUser, LucideUserPlus } from '@lucide/angular';
+import { LucideEye, LucideEyeOff, LucideLock, LucideMail, LucideUser, LucideUserPlus } from '@lucide/angular';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 
@@ -13,6 +13,8 @@ import { ToastService } from '../../core/toast.service';
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
+    LucideEye,
+    LucideEyeOff,
     LucideLock,
     LucideMail,
     LucideUser,
@@ -28,6 +30,8 @@ export class RegisterComponent {
   private readonly toast = inject(ToastService);
 
   isSubmitting = false;
+  showPassword = false;
+  showConfirmPassword = false;
 
   private readonly passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
     const password = control.get('password')?.value;
@@ -51,6 +55,14 @@ export class RegisterComponent {
       validators: this.passwordMatchValidator
     }
   );
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   submit(): void {
     if (this.form.invalid) {

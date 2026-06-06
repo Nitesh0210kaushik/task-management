@@ -19,6 +19,7 @@ export class NotificationNavItemComponent implements OnDestroy {
   private readonly notificationSubscription: Subscription;
 
   @Input() active = false;
+  @Input() compact = false;
 
   notifications: RealtimeNotification[] = [];
 

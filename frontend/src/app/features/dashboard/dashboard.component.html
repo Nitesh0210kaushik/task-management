@@ -1,4 +1,4 @@
-<main class="workspace-shell" [class.sidebar-open]="isMobileSidebarOpen">
+<main class="workspace-shell" [class.sidebar-open]="isMobileSidebarOpen" [class.sidebar-collapsed]="isSidebarCollapsed">
   <button
     class="sidebar-backdrop"
     type="button"
@@ -11,6 +11,17 @@
     <div class="brand">
       <span class="brand-mark">E</span>
       <strong>Eminence Tasks</strong>
+      <button
+        class="sidebar-toggle"
+        type="button"
+        (click)="toggleSidebar()"
+        [attr.title]="isSidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'"
+        [attr.aria-label]="isSidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'"
+        [attr.aria-expanded]="!isSidebarCollapsed"
+      >
+        <svg *ngIf="!isSidebarCollapsed" lucidePanelLeftClose aria-hidden="true"></svg>
+        <svg *ngIf="isSidebarCollapsed" lucidePanelLeftOpen aria-hidden="true"></svg>
+      </button>
       <button class="sidebar-close" type="button" (click)="closeMobileSidebar()" title="Close navigation" aria-label="Close navigation">
         <svg lucideX aria-hidden="true"></svg>
       </button>
@@ -25,22 +36,38 @@
     </div>
 
     <nav class="side-nav" aria-label="Workspace navigation">
-      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="prefetchSection('dashboard')">
+      <a
+        routerLink="/dashboard"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="prefetchSection('dashboard')"
+        [attr.title]="isSidebarCollapsed ? 'Dashboard' : null"
+      >
         <svg lucideLayoutDashboard aria-hidden="true"></svg>
         <span>Dashboard</span>
       </a>
-      <a routerLink="/tasks" routerLinkActive="active" (click)="prefetchSection('tasks')">
+      <a routerLink="/tasks" routerLinkActive="active" (click)="prefetchSection('tasks')" [attr.title]="isSidebarCollapsed ? 'Tasks' : null">
         <svg lucideListTodo aria-hidden="true"></svg>
         <span>Tasks</span>
       </a>
-      <a *ngIf="canViewUsers" routerLink="/team" routerLinkActive="active" (click)="prefetchSection('team')">
+      <a
+        *ngIf="canViewUsers"
+        routerLink="/team"
+        routerLinkActive="active"
+        (click)="prefetchSection('team')"
+        [attr.title]="isSidebarCollapsed ? 'Team' : null"
+      >
         <svg lucideUsers aria-hidden="true"></svg>
         <span>Team</span>
       </a>
-      <app-notification-nav-item [active]="isNotificationsPage" (click)="closeMobileSidebar()"></app-notification-nav-item>
+      <app-notification-nav-item
+        [active]="isNotificationsPage"
+        [compact]="isSidebarCollapsed"
+        (click)="closeMobileSidebar()"
+      ></app-notification-nav-item>
     </nav>
 
-    <button class="logout-link" type="button" (click)="logout()">
+    <button class="logout-link" type="button" (click)="logout()" [attr.title]="isSidebarCollapsed ? 'Logout' : null">
       <svg lucideLogOut aria-hidden="true"></svg>
       <span>Logout</span>
     </button>

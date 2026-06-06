@@ -48,3 +48,25 @@ svg {
   width: 18px;
   height: 18px;
 }
+
+@media (min-width: 861px) {
+  button.compact {
+    position: relative;
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  button.compact span {
+    display: none;
+  }
+
+  button.compact em {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    min-width: 16px;
+    height: 16px;
+    margin-left: 0;
+    font-size: 0.6rem;
+  }
+}

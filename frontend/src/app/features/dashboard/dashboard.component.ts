@@ -10,6 +10,8 @@ import {
   LucideListTodo,
   LucideLogOut,
   LucideMenu,
+  LucidePanelLeftClose,
+  LucidePanelLeftOpen,
   LucidePlus,
   LucideRefreshCw,
   LucideUsers,
@@ -69,6 +71,8 @@ const EMPTY_DASHBOARD_STATS: DashboardStats = {
     LucideListTodo,
     LucideLogOut,
     LucideMenu,
+    LucidePanelLeftClose,
+    LucidePanelLeftOpen,
     LucidePlus,
     LucideRefreshCw,
     LucideUsers,
@@ -102,6 +106,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   isLoadingTasks = false;
   isLoadingUsers = false;
   isMobileSidebarOpen = false;
+  isSidebarCollapsed = false;
   taskStatusFilter: TaskStatus | null = null;
   taskSearchTerm: string | null = null;
 
@@ -357,6 +362,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   closeMobileSidebar(): void {
     this.isMobileSidebarOpen = false;
+  }
+
+  toggleSidebar(): void {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
   }
 
   @HostListener('document:keydown.escape')

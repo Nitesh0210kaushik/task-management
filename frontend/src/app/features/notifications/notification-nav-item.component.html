@@ -1,4 +1,11 @@
-<button type="button" [class.active]="active" (click)="openNotificationsPage()">
+<button
+  type="button"
+  [class.active]="active"
+  [class.compact]="compact"
+  (click)="openNotificationsPage()"
+  [attr.title]="compact ? 'Notifications' : null"
+  [attr.aria-label]="compact ? 'Notifications' : null"
+>
   <svg lucideBell aria-hidden="true"></svg>
   <span>Notifications</span>
   <em *ngIf="unreadNotificationCount">{{ unreadNotificationCount > 9 ? '9+' : unreadNotificationCount }}</em>

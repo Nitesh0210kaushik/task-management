@@ -87,7 +87,8 @@
   font-weight: 800;
 }
 
-.field > span {
+.field > span,
+.field > label {
   color: #111827;
   font-size: 0.92rem;
 }
@@ -128,6 +129,11 @@
   border-color: rgba(15, 118, 110, 0.48);
 }
 
+.password-control {
+  grid-template-columns: 20px minmax(0, 1fr) 32px;
+  padding-right: 6px;
+}
+
 .control svg {
   color: #526070;
   transition: color 0.16s ease;
@@ -160,6 +166,34 @@
   border: 0;
   outline: 0;
   box-shadow: none;
+}
+
+.visibility-toggle {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  color: #526070;
+  cursor: pointer;
+}
+
+.visibility-toggle:hover,
+.visibility-toggle:focus-visible {
+  background: rgba(15, 118, 110, 0.08);
+  color: #0f766e;
+}
+
+.visibility-toggle:focus-visible {
+  outline: 2px solid rgba(15, 118, 110, 0.36);
+  outline-offset: 2px;
+}
+
+.visibility-toggle svg {
+  pointer-events: none;
 }
 
 .control input:-webkit-autofill,

@@ -11,6 +11,7 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: 292px minmax(0, 1fr);
+  transition: grid-template-columns 0.2s ease;
 }
 
 .sidebar {
@@ -22,6 +23,7 @@
   border-right: 1px solid rgba(15, 23, 42, 0.1);
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(18px);
+  transition: box-shadow 0.2s ease;
 }
 
 .brand,
@@ -60,8 +62,12 @@
 }
 
 .brand strong {
+  min-width: 0;
   color: #111827;
   font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .workspace-card {
@@ -208,7 +214,8 @@
 }
 
 .mobile-menu-button,
-.sidebar-close {
+.sidebar-close,
+.sidebar-toggle {
   width: 42px;
   height: 42px;
   place-items: center;
@@ -220,9 +227,27 @@
 }
 
 .mobile-menu-button:hover,
-.sidebar-close:hover {
+.sidebar-close:hover,
+.sidebar-toggle:hover {
   border-color: #0f766e;
   background: #eef4f3;
+}
+
+.sidebar-toggle {
+  display: grid;
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #526070;
+}
+
+.sidebar-toggle:hover,
+.sidebar-toggle:focus-visible {
+  color: #0f766e;
+}
+
+.sidebar-toggle:focus-visible {
+  outline: 2px solid rgba(15, 118, 110, 0.34);
+  outline-offset: 2px;
 }
 
 .user-chip > span {
@@ -806,6 +831,68 @@ button:disabled {
   opacity: 0.45;
 }
 
+@media (min-width: 861px) {
+  .workspace-shell.sidebar-collapsed {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+
+  .workspace-shell.sidebar-collapsed .brand {
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    min-height: 94px;
+    padding-inline: 10px;
+  }
+
+  .workspace-shell.sidebar-collapsed .brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .workspace-shell.sidebar-collapsed .brand strong,
+  .workspace-shell.sidebar-collapsed .workspace-card > div,
+  .workspace-shell.sidebar-collapsed .side-nav a span,
+  .workspace-shell.sidebar-collapsed .logout-link span {
+    display: none;
+  }
+
+  .workspace-shell.sidebar-collapsed .sidebar-toggle {
+    width: 34px;
+    height: 34px;
+    margin-left: 0;
+  }
+
+  .workspace-shell.sidebar-collapsed .workspace-card,
+  .workspace-shell.sidebar-collapsed .side-nav,
+  .workspace-shell.sidebar-collapsed .logout-link {
+    margin-inline: 14px;
+  }
+
+  .workspace-shell.sidebar-collapsed .workspace-card {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    margin-top: 22px;
+    margin-bottom: 22px;
+    padding: 10px 0;
+  }
+
+  .workspace-shell.sidebar-collapsed .workspace-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .workspace-shell.sidebar-collapsed .side-nav a,
+  .workspace-shell.sidebar-collapsed .logout-link {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .workspace-shell.sidebar-collapsed .side-nav a svg,
+  .workspace-shell.sidebar-collapsed .logout-link svg {
+    flex: 0 0 auto;
+  }
+}
+
 @media (max-width: 1180px) {
   .workspace-shell {
     grid-template-columns: 252px minmax(0, 1fr);
@@ -867,6 +954,10 @@ button:disabled {
   .sidebar-close,
   .mobile-menu-button {
     display: grid;
+  }
+
+  .sidebar-toggle {
+    display: none;
   }
 
   .brand {

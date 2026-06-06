@@ -65,9 +65,9 @@ Frontend runs on `http://localhost:4200`.
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Manager | manager@example.com | Password@123 |
-| Team Lead | lead@example.com | Password@123 |
-| Employee | employee@example.com | Password@123 |
+| Manager | manager@eminence.com | Password@123 |
+| Team Lead | lead@eminence.com | Password@123 |
+| Employee | employee@eminence.com | Password@123 |
 
 ## Useful Commands
 
