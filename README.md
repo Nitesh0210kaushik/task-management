@@ -32,8 +32,8 @@ cp .env.example .env
 
 The default values work for local setup. Do not commit `backend/.env`.
 
-For deployment, set the backend environment variables on the hosting platform using `backend/.env.production.example` and use a MongoDB Atlas `MONGODB_URI`.
-Set `NODE_ENV=production` in deployment. In production, the backend requires a MongoDB Atlas `mongodb+srv://` URI.
+For deployment, set the backend environment variables on the hosting platform using the keys from `backend/.env.example`.
+Set `NODE_ENV=production`, use a MongoDB Atlas `mongodb+srv://` URI, and generate unique `ACCESS_TOKEN_SECRET` and `REFRESH_TOKEN_SECRET` values.
 
 Seed demo data. Make sure MongoDB is running first.
 
@@ -141,7 +141,7 @@ npm install
 npm run build
 ```
 
-Set backend environment variables on the hosting platform using `backend/.env.production.example`. Do not upload local `.env` files.
+Set backend environment variables on the hosting platform using the keys from `backend/.env.example`. Do not upload local `.env` files.
 
 ## Notes
 

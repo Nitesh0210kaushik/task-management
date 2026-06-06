@@ -1,4 +1,3 @@
-import http from 'http';
 import { Server } from 'socket.io';
 import { createApp } from './app';
 import { connectDatabase } from './config/database';
@@ -10,7 +9,9 @@ const startServer = async (): Promise<void> => {
   await connectDatabase();
 
   const app = createApp();
-  const server = http.createServer(app);
+  const server = app.listen(env.port, () => {
+    logger.info(`API running on port ${env.port}`);
+  });
   const io = new Server(server, {
     cors: {
       origin: env.clientUrl,
@@ -20,10 +21,6 @@ const startServer = async (): Promise<void> => {
 
   configureSocket(io);
   app.set('io', io);
-
-  server.listen(env.port, () => {
-    logger.info(`API running on port ${env.port}`);
-  });
 };
 
 startServer().catch((error) => {
