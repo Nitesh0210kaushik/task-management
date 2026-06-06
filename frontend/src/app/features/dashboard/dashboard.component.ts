@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
-import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import {
   LucideArrowRight,
@@ -48,6 +48,13 @@ const EMPTY_DASHBOARD_STATS: DashboardStats = {
   inProgress: 0,
   completed: 0,
   completionRate: 0
+};
+
+const EMAIL_VALUE_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const memberNameValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const value = String(control.value ?? '').trim();
+
+  return value.includes('@') ? { emailLikeName: true } : null;
 };
 
 @Component({
@@ -121,7 +128,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private userWarmupTimer?: ReturnType<typeof setTimeout>;
 
   memberForm = this.fb.nonNullable.group({
-    username: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
+    username: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80), memberNameValidator]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(120)]]
   });
@@ -350,10 +357,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.refreshSectionData(this.activeSection);
   }
 
-  prefetchSection(section: WorkspaceSection): void {
-    this.activeSection = section;
+  handleSectionLinkClick(section: WorkspaceSection): void {
     this.closeMobileSidebar();
-    this.refreshSectionData(section);
+
+    if (this.activeSection === section) {
+      this.refreshSectionData(section);
+    }
   }
 
   openMobileSidebar(): void {
@@ -407,7 +416,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     clearTimeout(this.taskWarmupTimer);
 
     this.taskWarmupTimer = setTimeout(() => {
-      if (this.currentUser && !this.isTeamPage && !this.tasks.length) {
+      if (this.currentUser && !this.isTeamPage && !this.tasks.length && !this.isLoadingTasks) {
         this.loadTasks();
       }
     }, 450);
@@ -418,7 +427,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     clearTimeout(this.userWarmupTimer);
 
     this.userWarmupTimer = setTimeout(() => {
-      if (this.currentUser && this.canViewUsers && !this.users.length) {
+      if (this.currentUser && this.canViewUsers && !this.users.length && !this.isLoadingUsers) {
         this.loadUsers();
       }
     }, 450);
@@ -562,6 +571,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   closeMemberComposer(): void {
     this.resetMemberForm();
     this.isMemberComposerOpen = false;
+  }
+
+  handleMemberNameBlur(): void {
+    const usernameControl = this.memberForm.controls.username;
+    const emailControl = this.memberForm.controls.email;
+    const username = usernameControl.value.trim();
+    const email = emailControl.value.trim();
+
+    if (!EMAIL_VALUE_PATTERN.test(username) || email) {
+      return;
+    }
+
+    emailControl.setValue(username);
+    emailControl.markAsDirty();
+    emailControl.markAsTouched();
+    usernameControl.setValue('');
+    usernameControl.markAsTouched();
   }
 
   submitMember(): void {

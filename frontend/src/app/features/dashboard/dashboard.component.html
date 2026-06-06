@@ -40,13 +40,13 @@
         routerLink="/dashboard"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: true }"
-        (click)="prefetchSection('dashboard')"
+        (click)="handleSectionLinkClick('dashboard')"
         [attr.title]="isSidebarCollapsed ? 'Dashboard' : null"
       >
         <svg lucideLayoutDashboard aria-hidden="true"></svg>
         <span>Dashboard</span>
       </a>
-      <a routerLink="/tasks" routerLinkActive="active" (click)="prefetchSection('tasks')" [attr.title]="isSidebarCollapsed ? 'Tasks' : null">
+      <a routerLink="/tasks" routerLinkActive="active" (click)="handleSectionLinkClick('tasks')" [attr.title]="isSidebarCollapsed ? 'Tasks' : null">
         <svg lucideListTodo aria-hidden="true"></svg>
         <span>Tasks</span>
       </a>
@@ -54,7 +54,7 @@
         *ngIf="canViewUsers"
         routerLink="/team"
         routerLinkActive="active"
-        (click)="prefetchSection('team')"
+        (click)="handleSectionLinkClick('team')"
         [attr.title]="isSidebarCollapsed ? 'Team' : null"
       >
         <svg lucideUsers aria-hidden="true"></svg>
@@ -294,20 +294,38 @@
 
         <div class="form-grid">
           <label>
-            <span>Name</span>
-            <input type="text" formControlName="username" placeholder="Demo Team Lead" />
-            <small *ngIf="memberForm.controls.username.touched && memberForm.controls.username.invalid">Name must be 2 to 80 characters.</small>
+            <span>Full name</span>
+            <input
+              type="text"
+              name="teamLeadName"
+              autocomplete="name"
+              formControlName="username"
+              placeholder="Eminence Team Lead"
+              (blur)="handleMemberNameBlur()"
+            />
+            <small *ngIf="memberForm.controls.username.touched && memberForm.controls.username.hasError('emailLikeName')">
+              Enter the person's name, not an email address.
+            </small>
+            <small
+              *ngIf="
+                memberForm.controls.username.touched &&
+                memberForm.controls.username.invalid &&
+                !memberForm.controls.username.hasError('emailLikeName')
+              "
+            >
+              Name must be 2 to 80 characters.
+            </small>
           </label>
 
           <label>
-            <span>Email</span>
-            <input type="email" formControlName="email" placeholder="member@company.com" />
+            <span>Email address</span>
+            <input type="email" name="teamLeadEmail" autocomplete="email" inputmode="email" formControlName="email" placeholder="lead@eminence.com" />
             <small *ngIf="memberForm.controls.email.touched && memberForm.controls.email.invalid">Enter a valid email.</small>
           </label>
 
           <label>
             <span>Password</span>
-            <input type="password" formControlName="password" placeholder="Minimum 8 characters" />
+            <input type="password" name="teamLeadPassword" autocomplete="new-password" formControlName="password" placeholder="Minimum 8 characters" />
             <small *ngIf="memberForm.controls.password.touched && memberForm.controls.password.invalid">Password must be at least 8 characters.</small>
           </label>
 
@@ -324,6 +342,7 @@
       *ngIf="isTasksPage"
       [tasks]="tasks"
       [isLoading]="isLoadingTasks"
+      [currentUser]="currentUser"
       (editRequested)="editTask($event)"
       (taskChanged)="handleTaskChanged()"
       (statusFilterChanged)="handleTaskStatusFilterChanged($event)"

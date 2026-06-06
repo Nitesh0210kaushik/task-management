@@ -46,7 +46,7 @@
       <label *ngIf="canAssignTasks">
         <span>Owner</span>
         <select formControlName="assignedTo">
-          <option value="">Self</option>
+          <option [value]="currentUserId || ''">Self</option>
           <option *ngFor="let user of assignableUsers" [value]="user.id">{{ user.username }} - {{ roleLabel(user.role) }}</option>
         </select>
       </label>

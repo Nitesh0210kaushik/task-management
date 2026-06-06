@@ -1,13 +1,15 @@
+import mongoose from 'mongoose';
 import { connectDatabase } from '../config/database';
 import { TASK_STATUSES } from '../constants/task-status';
+import { Session } from '../modules/auth/models/session.model';
+import { Notification } from '../modules/notifications/models/notification.model';
 import { Task } from '../modules/tasks/models/task.model';
 import { User } from '../modules/users/models/user.model';
 
 const seed = async (): Promise<void> => {
   await connectDatabase();
 
-  await Task.deleteMany({});
-  await User.deleteMany({});
+  await Promise.all([Notification.deleteMany({}), Session.deleteMany({}), Task.deleteMany({}), User.deleteMany({})]);
 
   const manager = await User.create({
     username: 'Eminence Manager',
@@ -59,10 +61,18 @@ const seed = async (): Promise<void> => {
   console.log('Manager: manager@eminence.com / Password@123');
   console.log('Team Lead: lead@eminence.com / Password@123');
   console.log('Employee: employee@eminence.com / Password@123');
-  process.exit(0);
 };
 
-seed().catch((error) => {
-  console.error('Seed failed:', error);
-  process.exit(1);
-});
+const run = async (): Promise<void> => {
+  try {
+    await seed();
+    await mongoose.disconnect();
+    process.exit(0);
+  } catch (error) {
+    console.error('Seed failed:', error);
+    await mongoose.disconnect().catch(() => undefined);
+    process.exit(1);
+  }
+};
+
+void run();

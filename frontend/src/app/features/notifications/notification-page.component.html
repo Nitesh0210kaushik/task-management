@@ -5,9 +5,19 @@
       <h2>Workspace activity</h2>
       <em *ngIf="unreadNotificationCount">{{ unreadNotificationCount }} unread</em>
     </div>
-    <button type="button" (click)="markNotificationsRead()" [disabled]="!unreadNotificationCount || isMarkingRead">
-      {{ isMarkingRead ? 'Marking read' : 'Mark all read' }}
-    </button>
+    <div class="notification-head-actions">
+      <button type="button" (click)="markNotificationsRead()" [disabled]="!unreadNotificationCount || isMarkingRead">
+        {{ isMarkingRead ? 'Marking read' : 'Mark all read' }}
+      </button>
+      <button
+        class="danger-outline"
+        type="button"
+        (click)="requestDeleteAllNotifications()"
+        [disabled]="!notifications.length || isDeletingAllNotifications"
+      >
+        {{ isDeletingAllNotifications ? 'Deleting' : 'Delete all' }}
+      </button>
+    </div>
   </div>
 
   <app-notification-list
@@ -74,6 +84,64 @@
         >
           <svg lucideTrash2 aria-hidden="true"></svg>
           <span>{{ isDeletingNotification(notificationToDelete) ? 'Deleting' : 'Delete notification' }}</span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div class="delete-modal-backdrop" *ngIf="isDeleteAllModalOpen" (click)="closeDeleteAllConfirmation()">
+    <section
+      class="delete-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-all-notifications-title"
+      (click)="$event.stopPropagation()"
+      (keydown.escape)="closeDeleteAllConfirmation()"
+    >
+      <div class="delete-modal-head">
+        <button
+          type="button"
+          (click)="closeDeleteAllConfirmation()"
+          [disabled]="isDeletingAllNotifications"
+          title="Close"
+          aria-label="Close delete all notifications confirmation"
+        >
+          <svg lucideX aria-hidden="true"></svg>
+        </button>
+      </div>
+
+      <div class="delete-modal-copy">
+        <h2 id="delete-all-notifications-title">Delete all notifications?</h2>
+        <p>Are you sure you want to delete all notifications? This will remove them from your activity feed.</p>
+        <dl>
+          <div>
+            <dt>Total</dt>
+            <dd>{{ deleteAllNotificationCount }}</dd>
+          </div>
+          <div>
+            <dt>Unread</dt>
+            <dd>{{ deleteAllUnreadCount }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="delete-modal-actions">
+        <button
+          class="ghost-button"
+          type="button"
+          (click)="closeDeleteAllConfirmation()"
+          [disabled]="isDeletingAllNotifications"
+        >
+          Cancel
+        </button>
+        <button
+          class="delete-button"
+          type="button"
+          (click)="confirmDeleteAllNotifications()"
+          [disabled]="isDeletingAllNotifications"
+        >
+          <svg lucideTrash2 aria-hidden="true"></svg>
+          <span>{{ isDeletingAllNotifications ? 'Deleting' : 'Delete all notifications' }}</span>
         </button>
       </div>
     </section>

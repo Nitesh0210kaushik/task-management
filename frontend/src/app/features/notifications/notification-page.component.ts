@@ -21,6 +21,10 @@ export class NotificationPageComponent implements OnInit, OnDestroy {
 
   notifications: RealtimeNotification[] = [];
   isMarkingRead = false;
+  isDeleteAllModalOpen = false;
+  isDeletingAllNotifications = false;
+  deleteAllNotificationCount = 0;
+  deleteAllUnreadCount = 0;
   notificationPendingDelete: RealtimeNotification | null = null;
   private readonly readingNotificationIds = new Set<string>();
   private readonly deletingNotificationIds = new Set<string>();
@@ -76,6 +80,54 @@ export class NotificationPageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => this.toast.success('All notifications marked as read.', 'Notifications'),
         error: (error) => this.toast.fromError(error, 'Unable to mark notifications as read.')
+      });
+  }
+
+  requestDeleteAllNotifications(): void {
+    if (!this.notifications.length || this.isDeletingAllNotifications) {
+      return;
+    }
+
+    this.notificationPendingDelete = null;
+    this.deleteAllNotificationCount = this.notifications.length;
+    this.deleteAllUnreadCount = this.unreadNotificationCount;
+    this.isDeleteAllModalOpen = true;
+  }
+
+  closeDeleteAllConfirmation(): void {
+    if (this.isDeletingAllNotifications) {
+      return;
+    }
+
+    this.isDeleteAllModalOpen = false;
+    this.deleteAllNotificationCount = 0;
+    this.deleteAllUnreadCount = 0;
+  }
+
+  confirmDeleteAllNotifications(): void {
+    if (!this.deleteAllNotificationCount || this.isDeletingAllNotifications) {
+      return;
+    }
+
+    this.isDeletingAllNotifications = true;
+
+    this.notificationService
+      .deleteAllNotifications()
+      .pipe(
+        finalize(() => {
+          this.isDeletingAllNotifications = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.isDeleteAllModalOpen = false;
+          this.notificationPendingDelete = null;
+          this.deleteAllNotificationCount = 0;
+          this.deleteAllUnreadCount = 0;
+          this.toast.success(`${response.data.deletedCount} notifications removed from your activity feed.`, 'Deleted');
+        },
+        error: (error) => this.toast.fromError(error, 'Unable to delete notifications.')
       });
   }
 

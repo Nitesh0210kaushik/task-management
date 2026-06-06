@@ -64,7 +64,7 @@ export class PermissionService {
       return visibleUserIds.some((id) => objectIdEquals(id, task.createdBy) || objectIdEquals(id, task.assignedTo));
     }
 
-    return objectIdEquals(currentUser._id, task.createdBy) || objectIdEquals(currentUser._id, task.assignedTo);
+    return objectIdEquals(currentUser._id, task.assignedTo);
   }
 
   async findAssignableUsers(currentUser: AuthUser): Promise<IUser[]> {
@@ -80,4 +80,3 @@ export class PermissionService {
     return currentUserRecord ? [currentUserRecord] : [];
   }
 }
-

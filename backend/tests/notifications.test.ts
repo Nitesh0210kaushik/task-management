@@ -67,4 +67,60 @@ describe('Notification API', () => {
     const notificationsAfterDelete = await api.get('/api/notifications').set('Authorization', bearer(teamLeadAuth.token));
     expect(notificationsAfterDelete.body.data).toHaveLength(0);
   });
+
+  it('soft deletes all notifications for only the current user', async () => {
+    const { manager, teamLead, employee } = await seedWorkspace();
+    const managerAuth = await loginTestUser(manager);
+    const teamLeadAuth = await loginTestUser(teamLead);
+    const employeeAuth = await loginTestUser(employee);
+
+    const createFirstTaskResponse = await api
+      .post('/api/tasks')
+      .set('Authorization', bearer(managerAuth.token))
+      .send({
+        title: 'Bulk delete notification one',
+        description: 'First notification for delete-all coverage.',
+        assignedTo: employee.id
+      });
+
+    const createSecondTaskResponse = await api
+      .post('/api/tasks')
+      .set('Authorization', bearer(managerAuth.token))
+      .send({
+        title: 'Bulk delete notification two',
+        description: 'Second notification for delete-all coverage.',
+        assignedTo: employee.id
+      });
+
+    expect(createFirstTaskResponse.status).toBe(201);
+    expect(createSecondTaskResponse.status).toBe(201);
+
+    const leadNotificationsBefore = await api.get('/api/notifications').set('Authorization', bearer(teamLeadAuth.token));
+    const employeeNotificationsBefore = await api.get('/api/notifications').set('Authorization', bearer(employeeAuth.token));
+
+    expect(leadNotificationsBefore.status).toBe(200);
+    expect(leadNotificationsBefore.body.data).toHaveLength(2);
+    expect(employeeNotificationsBefore.body.data).toHaveLength(2);
+
+    const deleteAllResponse = await api.delete('/api/notifications/delete-all').set('Authorization', bearer(teamLeadAuth.token));
+
+    expect(deleteAllResponse.status).toBe(200);
+    expect(deleteAllResponse.body.data.deletedCount).toBe(leadNotificationsBefore.body.data.length);
+
+    const leadNotificationsAfter = await api.get('/api/notifications').set('Authorization', bearer(teamLeadAuth.token));
+    const employeeNotificationsAfter = await api.get('/api/notifications').set('Authorization', bearer(employeeAuth.token));
+
+    expect(leadNotificationsAfter.body.data).toHaveLength(0);
+    expect(employeeNotificationsAfter.body.data).toHaveLength(employeeNotificationsBefore.body.data.length);
+
+    const deletedNotificationIds = (leadNotificationsBefore.body.data as Array<{ id: string }>).map((notification) => notification.id);
+    const employeeNotificationIds = (employeeNotificationsBefore.body.data as Array<{ id: string }>).map((notification) => notification.id);
+    const deletedRecords = await Notification.find({ _id: { $in: deletedNotificationIds } }).lean();
+    const employeeRecords = await Notification.find({ _id: { $in: employeeNotificationIds } }).lean();
+
+    expect(deletedRecords).toHaveLength(deletedNotificationIds.length);
+    expect(deletedRecords.every((notification) => notification.isDeleted && notification.deletedAt)).toBe(true);
+    expect(employeeRecords).toHaveLength(employeeNotificationIds.length);
+    expect(employeeRecords.every((notification) => !notification.isDeleted && !notification.deletedAt)).toBe(true);
+  });
 });

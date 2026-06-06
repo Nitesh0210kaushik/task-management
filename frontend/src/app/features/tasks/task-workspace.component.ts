@@ -13,7 +13,7 @@ import {
   LucideTrash2,
   LucideX
 } from '@lucide/angular';
-import { Task, TaskStatus } from '../../core/models';
+import { Task, TaskStatus, User } from '../../core/models';
 import { TaskService } from '../../core/task.service';
 import { ToastService } from '../../core/toast.service';
 
@@ -48,6 +48,7 @@ export class TaskWorkspaceComponent implements OnDestroy {
   private lastAppliedSearch: string | null = null;
 
   @Input() isLoading = false;
+  @Input() currentUser: User | null = null;
 
   @Input()
   set tasks(value: Task[] | null) {
@@ -111,6 +112,18 @@ export class TaskWorkspaceComponent implements OnDestroy {
     return this.displayedTasks.filter((task) => this.normalizedStatus(task) === 'completed');
   }
 
+  canManageTask(task: Task): boolean {
+    if (!this.currentUser) {
+      return false;
+    }
+
+    if (this.currentUser.role === 'manager' || this.currentUser.role === 'teamLead') {
+      return true;
+    }
+
+    return task.assignedTo.id === this.currentUser.id;
+  }
+
   setTaskView(view: TaskViewMode): void {
     this.taskView = view;
   }
@@ -132,11 +145,15 @@ export class TaskWorkspaceComponent implements OnDestroy {
   }
 
   requestEdit(task: Task): void {
+    if (!this.canManageTask(task)) {
+      return;
+    }
+
     this.editRequested.emit(task);
   }
 
   markComplete(task: Task): void {
-    if (this.normalizedStatus(task) === 'completed') {
+    if (!this.canManageTask(task) || this.normalizedStatus(task) === 'completed') {
       return;
     }
 
@@ -144,6 +161,10 @@ export class TaskWorkspaceComponent implements OnDestroy {
   }
 
   moveTaskToStatus(task: Task, status: TaskStatus): void {
+    if (!this.canManageTask(task)) {
+      return;
+    }
+
     const previousStatus = this.normalizedStatus(task);
 
     if (previousStatus === status) {
@@ -165,6 +186,11 @@ export class TaskWorkspaceComponent implements OnDestroy {
   }
 
   startTaskDrag(event: DragEvent, task: Task): void {
+    if (!this.canManageTask(task)) {
+      event.preventDefault();
+      return;
+    }
+
     this.draggedTaskId = task.id;
     this.dragTargetStatus = this.normalizedStatus(task);
 
@@ -212,6 +238,10 @@ export class TaskWorkspaceComponent implements OnDestroy {
   }
 
   deleteTask(task: Task): void {
+    if (!this.canManageTask(task)) {
+      return;
+    }
+
     this.taskPendingDelete = task;
   }
 

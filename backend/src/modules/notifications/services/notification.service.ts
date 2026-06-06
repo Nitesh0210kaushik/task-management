@@ -5,7 +5,7 @@ import type { TaskRealtimeEvent } from '../../../realtime/taskEvents';
 import { ApiError } from '../../../utils/ApiError';
 import type { AuthUser } from '../../auth/types/auth.types';
 import type { ITask } from '../../tasks/models/task.model';
-import type { NotificationResponseDto, MarkNotificationsReadResultDto } from '../dtos/notification.dto';
+import type { DeleteNotificationsResultDto, MarkNotificationsReadResultDto, NotificationResponseDto } from '../dtos/notification.dto';
 import { type INotification } from '../models/notification.model';
 import { NotificationRepository } from '../repositories/notification.repository';
 
@@ -97,6 +97,11 @@ export class NotificationService {
       id: notificationId,
       isDeleted: true
     };
+  }
+
+  async deleteAllNotifications(currentUser: AuthUser): Promise<DeleteNotificationsResultDto> {
+    const deletedCount = await this.notificationRepository.softDeleteAll(currentUser.id);
+    return { deletedCount };
   }
 
   async createTaskNotifications(input: CreateTaskNotificationsInput): Promise<INotification[]> {

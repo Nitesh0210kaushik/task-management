@@ -46,3 +46,12 @@ export const deleteNotification = catchAsync(async (req: Request, res: Response)
   const result = await notificationService.deleteNotification(req.user, getRouteParam(req.params.id));
   apiResponse(res, HTTP_STATUS.OK, result, 'Notification deleted successfully.');
 });
+
+export const deleteNotifications = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  if (!req.user) {
+    throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Authentication is required.');
+  }
+
+  const result = await notificationService.deleteAllNotifications(req.user);
+  apiResponse(res, HTTP_STATUS.OK, result, 'Notifications deleted successfully.');
+});

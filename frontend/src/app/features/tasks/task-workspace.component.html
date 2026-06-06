@@ -48,7 +48,8 @@
         <article
           class="kanban-card"
           *ngFor="let task of displayedBacklogTasks"
-          draggable="true"
+          [draggable]="canManageTask(task)"
+          [class.read-only]="!canManageTask(task)"
           [class.is-dragging]="isTaskDragging(task)"
           (dragstart)="startTaskDrag($event, task)"
           (dragend)="endTaskDrag()"
@@ -70,10 +71,10 @@
           <div class="kanban-footer">
             <span class="status-badge">{{ statusLabel(task.status) }}</span>
             <div class="task-actions">
-              <button type="button" (click)="requestEdit(task)" title="Edit task" aria-label="Edit task">
+              <button type="button" (click)="requestEdit(task)" [disabled]="!canManageTask(task)" title="Edit task" aria-label="Edit task">
                 <svg lucidePencil aria-hidden="true"></svg>
               </button>
-              <button class="danger" type="button" (click)="deleteTask(task)" title="Delete task" aria-label="Delete task">
+              <button class="danger" type="button" (click)="deleteTask(task)" [disabled]="!canManageTask(task)" title="Delete task" aria-label="Delete task">
                 <svg lucideTrash2 aria-hidden="true"></svg>
               </button>
             </div>
@@ -102,7 +103,8 @@
         <article
           class="kanban-card is-active"
           *ngFor="let task of displayedInProgressTasks"
-          draggable="true"
+          [draggable]="canManageTask(task)"
+          [class.read-only]="!canManageTask(task)"
           [class.is-dragging]="isTaskDragging(task)"
           (dragstart)="startTaskDrag($event, task)"
           (dragend)="endTaskDrag()"
@@ -124,10 +126,10 @@
           <div class="kanban-footer">
             <span class="status-badge active">{{ statusLabel(task.status) }}</span>
             <div class="task-actions">
-              <button type="button" (click)="requestEdit(task)" title="Edit task" aria-label="Edit task">
+              <button type="button" (click)="requestEdit(task)" [disabled]="!canManageTask(task)" title="Edit task" aria-label="Edit task">
                 <svg lucidePencil aria-hidden="true"></svg>
               </button>
-              <button class="danger" type="button" (click)="deleteTask(task)" title="Delete task" aria-label="Delete task">
+              <button class="danger" type="button" (click)="deleteTask(task)" [disabled]="!canManageTask(task)" title="Delete task" aria-label="Delete task">
                 <svg lucideTrash2 aria-hidden="true"></svg>
               </button>
             </div>
@@ -156,7 +158,8 @@
         <article
           class="kanban-card is-complete"
           *ngFor="let task of displayedCompletedTasks"
-          draggable="true"
+          [draggable]="canManageTask(task)"
+          [class.read-only]="!canManageTask(task)"
           [class.is-dragging]="isTaskDragging(task)"
           (dragstart)="startTaskDrag($event, task)"
           (dragend)="endTaskDrag()"
@@ -178,10 +181,10 @@
           <div class="kanban-footer">
             <span class="status-badge complete">{{ statusLabel(task.status) }}</span>
             <div class="task-actions">
-              <button type="button" (click)="requestEdit(task)" title="Edit task" aria-label="Edit task">
+              <button type="button" (click)="requestEdit(task)" [disabled]="!canManageTask(task)" title="Edit task" aria-label="Edit task">
                 <svg lucidePencil aria-hidden="true"></svg>
               </button>
-              <button class="danger" type="button" (click)="deleteTask(task)" title="Delete task" aria-label="Delete task">
+              <button class="danger" type="button" (click)="deleteTask(task)" [disabled]="!canManageTask(task)" title="Delete task" aria-label="Delete task">
                 <svg lucideTrash2 aria-hidden="true"></svg>
               </button>
             </div>
@@ -226,13 +229,13 @@
         <span>{{ formatDate(task.updatedAt) }}</span>
 
         <div class="task-actions">
-          <button type="button" (click)="markComplete(task)" [disabled]="normalizedStatus(task) === 'completed'" title="Mark done" aria-label="Mark done">
+          <button type="button" (click)="markComplete(task)" [disabled]="!canManageTask(task) || normalizedStatus(task) === 'completed'" title="Mark done" aria-label="Mark done">
             <svg lucideCheckCircle2 aria-hidden="true"></svg>
           </button>
-          <button type="button" (click)="requestEdit(task)" title="Edit task" aria-label="Edit task">
+          <button type="button" (click)="requestEdit(task)" [disabled]="!canManageTask(task)" title="Edit task" aria-label="Edit task">
             <svg lucidePencil aria-hidden="true"></svg>
           </button>
-          <button class="danger" type="button" (click)="deleteTask(task)" title="Delete task" aria-label="Delete task">
+          <button class="danger" type="button" (click)="deleteTask(task)" [disabled]="!canManageTask(task)" title="Delete task" aria-label="Delete task">
             <svg lucideTrash2 aria-hidden="true"></svg>
           </button>
         </div>

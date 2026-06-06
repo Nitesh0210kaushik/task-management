@@ -587,7 +587,7 @@
 }
 
 .member-modal {
-  width: min(620px, 100%);
+  width: min(540px, 100%);
 }
 
 .composer-heading {
@@ -657,6 +657,19 @@ textarea:focus {
   box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
 }
 
+input.ng-touched.ng-invalid,
+select.ng-touched.ng-invalid,
+textarea.ng-touched.ng-invalid {
+  border-color: #b42318;
+}
+
+input.ng-touched.ng-invalid:focus,
+select.ng-touched.ng-invalid:focus,
+textarea.ng-touched.ng-invalid:focus {
+  border-color: #b42318;
+  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.12);
+}
+
 ::placeholder {
   color: #7a8696;
 }
@@ -667,6 +680,15 @@ textarea:focus {
   padding: 0 18px;
   background: #0f766e;
   color: #ffffff;
+}
+
+.member-modal .form-grid {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.member-modal .save-button {
+  width: 100%;
 }
 
 .loading-strip {

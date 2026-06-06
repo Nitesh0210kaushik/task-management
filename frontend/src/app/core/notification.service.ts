@@ -98,6 +98,18 @@ export class NotificationService {
     );
   }
 
+  deleteAllNotifications(): Observable<ApiResponse<{ deletedCount: number }>> {
+    const previousNotifications = this.currentNotifications;
+    this.notificationsSubject.next([]);
+
+    return this.http.delete<ApiResponse<{ deletedCount: number }>>(`${environment.apiUrl}/notifications/delete-all`).pipe(
+      catchError((error: unknown) => {
+        this.notificationsSubject.next(previousNotifications);
+        return throwError(() => error);
+      })
+    );
+  }
+
   formatNotificationTime(value: string): string {
     const elapsedMs = Date.now() - new Date(value).getTime();
     const elapsedMinutes = Math.max(0, Math.floor(elapsedMs / 60000));

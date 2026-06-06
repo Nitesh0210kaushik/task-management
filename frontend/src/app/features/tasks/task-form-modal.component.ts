@@ -109,7 +109,7 @@ export class TaskFormModalComponent implements OnChanges {
       title: this.editingTask.title,
       description: this.editingTask.description,
       status: this.normalizedStatus(this.editingTask),
-      assignedTo: this.editingTask.assignedTo.id === this.currentUserId ? '' : this.editingTask.assignedTo.id
+      assignedTo: this.editingTask.assignedTo.id
     });
   }
 

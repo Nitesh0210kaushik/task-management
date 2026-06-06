@@ -43,4 +43,12 @@ export class NotificationRepository {
       { new: true }
     ).exec();
   }
+
+  async softDeleteAll(recipientId: string | Types.ObjectId): Promise<number> {
+    const result = await Notification.updateMany(
+      { recipient: recipientId, ...activeNotificationFilter },
+      { $set: { isDeleted: true, deletedAt: new Date() } }
+    );
+    return result.modifiedCount;
+  }
 }

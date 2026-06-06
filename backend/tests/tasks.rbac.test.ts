@@ -69,6 +69,7 @@ describe('Task API RBAC and CRUD', () => {
     const { manager, teamLead, employee, outsideEmployee } = await seedWorkspace();
     const managerAuth = await loginTestUser(manager);
     const teamLeadAuth = await loginTestUser(teamLead);
+    const employeeAuth = await loginTestUser(employee);
     const outsideAuth = await loginTestUser(outsideEmployee);
 
     await api
@@ -93,6 +94,7 @@ describe('Task API RBAC and CRUD', () => {
 
     const managerTasks = await api.get('/api/tasks').set('Authorization', bearer(managerAuth.token));
     const teamLeadTasks = await api.get('/api/tasks').set('Authorization', bearer(teamLeadAuth.token));
+    const employeeTasks = await api.get('/api/tasks').set('Authorization', bearer(employeeAuth.token));
     const outsideTasks = await api.get('/api/tasks').set('Authorization', bearer(outsideAuth.token));
     const filteredTasks = await api
       .get(`/api/tasks?status=${TASK_STATUSES.IN_PROGRESS}`)
@@ -115,6 +117,7 @@ describe('Task API RBAC and CRUD', () => {
 
     expect(managerTasks.body.data).toHaveLength(2);
     expect(teamLeadTasks.body.data).toHaveLength(1);
+    expect(employeeTasks.body.data).toHaveLength(1);
     expect(outsideTasks.body.data).toHaveLength(1);
     expect(filteredTasks.body.data).toHaveLength(1);
     expect(filteredTasks.body.data[0].status).toBe(TASK_STATUSES.IN_PROGRESS);
@@ -178,5 +181,43 @@ describe('Task API RBAC and CRUD', () => {
 
     expect(managerTasksAfterDelete.body.data).toHaveLength(0);
     expect(updateDeletedTaskResponse.status).toBe(404);
+  });
+
+  it('allows employees to update only tasks assigned to them', async () => {
+    const { manager, employee, outsideEmployee } = await seedWorkspace();
+    const managerAuth = await loginTestUser(manager);
+    const employeeAuth = await loginTestUser(employee);
+
+    const assignedTaskResponse = await api
+      .post('/api/tasks')
+      .set('Authorization', bearer(managerAuth.token))
+      .send({
+        title: 'Employee owned task',
+        description: 'Employee can move a task assigned to them.',
+        assignedTo: employee.id
+      });
+
+    const ownedUpdateResponse = await api
+      .patch(`/api/tasks/${assignedTaskResponse.body.data.id}`)
+      .set('Authorization', bearer(employeeAuth.token))
+      .send({ status: TASK_STATUSES.IN_PROGRESS });
+
+    expect(ownedUpdateResponse.status).toBe(200);
+    expect(ownedUpdateResponse.body.data.status).toBe(TASK_STATUSES.IN_PROGRESS);
+
+    const createdButNotAssignedTask = await Task.create({
+      title: 'Created but not assigned',
+      description: 'Employee should not update tasks assigned to someone else.',
+      status: TASK_STATUSES.BACKLOG,
+      createdBy: employee._id,
+      assignedTo: outsideEmployee._id
+    });
+
+    const blockedUpdateResponse = await api
+      .patch(`/api/tasks/${createdButNotAssignedTask.id}`)
+      .set('Authorization', bearer(employeeAuth.token))
+      .send({ status: TASK_STATUSES.COMPLETED });
+
+    expect(blockedUpdateResponse.status).toBe(403);
   });
 });

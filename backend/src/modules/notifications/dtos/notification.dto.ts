@@ -21,3 +21,7 @@ export interface NotificationResponseDto {
 export interface MarkNotificationsReadResultDto {
   updatedCount: number;
 }
+
+export interface DeleteNotificationsResultDto {
+  deletedCount: number;
+}
