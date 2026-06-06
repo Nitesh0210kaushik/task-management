@@ -4,29 +4,30 @@ MEAN stack task management app with JWT authentication, role-based access, task 
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22 LTS
 - MongoDB local or MongoDB Atlas
 
-## Setup And Run
+## Setup And Run Locally
 
-### 1. Install Dependencies
+### 1. Backend Setup
 
 ```bash
-npm run install:all
+cd backend
+npm install
 ```
 
-### 2. Create Backend Env File
+Create the backend env file.
 
 Windows PowerShell:
 
 ```powershell
-Copy-Item backend/.env.example backend/.env
+Copy-Item .env.example .env
 ```
 
 macOS/Linux:
 
 ```bash
-cp backend/.env.example backend/.env
+cp .env.example .env
 ```
 
 The default values work for local setup. Do not commit `backend/.env`.
@@ -34,30 +35,28 @@ The default values work for local setup. Do not commit `backend/.env`.
 For deployment, set the backend environment variables on the hosting platform using `backend/.env.production.example` and use a MongoDB Atlas `MONGODB_URI`.
 Set `NODE_ENV=production` in deployment. In production, the backend requires a MongoDB Atlas `mongodb+srv://` URI.
 
-### 3. Seed Demo Data
-
-Make sure MongoDB is running, then run:
+Seed demo data. Make sure MongoDB is running first.
 
 ```bash
 npm run seed
 ```
 
-### 4. Start Backend
-
-Open one terminal:
+Start the backend.
 
 ```bash
-npm run dev:backend
+npm run dev
 ```
 
 Backend runs on `http://localhost:5000`.
 
-### 5. Start Frontend
+### 2. Frontend Setup
 
-Open another terminal:
+Open a new terminal from the project root.
 
 ```bash
-npm run dev:frontend
+cd frontend
+npm install
+ng serve
 ```
 
 Frontend runs on `http://localhost:4200`.
@@ -72,13 +71,44 @@ Frontend runs on `http://localhost:4200`.
 
 ## Useful Commands
 
+Backend:
+
 ```bash
+cd backend
 npm run build
-npm run test:backend
+npm test
 npm run seed
 ```
 
+Frontend:
+
+```bash
+cd frontend
+npm run build
+```
+
 Backend tests use `TEST_MONGODB_URI` when it is set. If it is not set, tests derive a `_test` database from `MONGODB_URI`.
+
+## Deployment Notes
+
+Backend service:
+
+```bash
+cd backend
+npm install --include=dev
+npm run build
+npm start
+```
+
+Frontend/static service:
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+Set backend environment variables on the hosting platform using `backend/.env.production.example`. Do not upload local `.env` files.
 
 ## Notes
 

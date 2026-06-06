@@ -4,15 +4,15 @@
   "private": true,
   "description": "MEAN stack task management application with JWT auth, role-based authorization, task CRUD, and real-time updates.",
   "scripts": {
-    "install:all": "npm install --prefix backend && npm install --prefix frontend",
-    "dev:backend": "npm run dev --prefix backend",
-    "dev:frontend": "npm start --prefix frontend",
-    "build": "npm run build --prefix backend && npm run build --prefix frontend",
-    "start": "npm start --prefix backend",
-    "test:backend": "npm test --prefix backend",
-    "seed": "npm run seed --prefix backend"
+    "install:all": "npm --prefix backend install --include=dev && npm --prefix frontend install --include=dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend start",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "start": "npm --prefix backend start",
+    "test:backend": "npm --prefix backend test",
+    "seed": "npm --prefix backend run seed"
   },
   "engines": {
-    "node": ">=20.11.0"
+    "node": "22.x"
   }
 }
